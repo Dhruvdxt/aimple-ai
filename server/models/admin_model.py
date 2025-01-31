@@ -1,0 +1,1 @@
+# Schema of "admin" entity will be defined here.

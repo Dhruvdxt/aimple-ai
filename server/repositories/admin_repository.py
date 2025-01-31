@@ -1,0 +1,1 @@
+# All the CRUD operations of "admin" entity will be defined here.

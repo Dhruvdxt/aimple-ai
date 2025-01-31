@@ -1,0 +1,1 @@
+# All the routes or endpoints of "user" will be defined here.

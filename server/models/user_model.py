@@ -1,0 +1,1 @@
+# Schema of "user" entity will be defined here.
