@@ -1,1 +1,1 @@
-# All the routes or endpoints of "user" will be defined here.
+# All the routes or endpoints of "admin" will be defined here.

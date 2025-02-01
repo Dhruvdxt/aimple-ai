@@ -6,6 +6,9 @@ ENV/
 # Environment variables
 .env
 
+# Raw file
+main2.py
+
 # Python
 __pycache__/
 *.py[cod]
