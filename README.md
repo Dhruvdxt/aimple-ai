@@ -21,5 +21,11 @@ git commit -m "commit-messege"
 git push -u origin main
 
 # Command to freeze all requirements
-Note: Run this command in root dir aimple-ai
-pip freeze > requirements.txt
+NOTE: Run this command in root dir aimple-ai
+Run: pip freeze > requirements.txt
+
+# Command to run the server
+NOTE: Before running the server, make sure that your localhost MySQL server is running and that a database is created with the name "aimple_ai_db".
+You can create database using MySQL Workbench application
+
+Run: uvicorn server.main:app --reload
