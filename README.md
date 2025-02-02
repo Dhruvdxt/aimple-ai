@@ -26,6 +26,7 @@ Run: pip freeze > requirements.txt
 
 # Command to run the server
 NOTE: Before running the server, make sure that your localhost MySQL server is running and that a database is created with the name "aimple_ai_db".
-You can create database using MySQL Workbench application
+You can create database using MySQL Workbench application.
 
-Run: uvicorn server.main:app --reload
+>> Run
+uvicorn server.main:app --reload

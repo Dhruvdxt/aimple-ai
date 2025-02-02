@@ -11,8 +11,3 @@ DATABASE_URL = f"mysql+pymysql://{user}:{encoded_password}@{host}/{database_name
 engine = create_engine(DATABASE_URL, echo=True)
 meta = MetaData()
 db = engine.connect()
-
-def init_db():
-    meta.create_all(engine)
-
-init_db()

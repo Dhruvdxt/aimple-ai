@@ -1,11 +1,15 @@
 from fastapi import HTTPException, Depends, Security, status
+from fastapi.security import SecurityScopes
 from typing import Optional
 from datetime import datetime, timedelta
 from os import getenv
 from jose import JWTError, jwt
+from ...config.fastapi_config import user_oauth2_scheme, admin_oauth2_scheme
+from .errors import cred_exp
 from .hashing import verify_password
 from ...repositories.admin_repository import get_admin_by_email
 from ...repositories.user_repository import get_user_by_email
+from ...schemas.base_schemas import TokenData
 
 def authenticate(email: str, password: str, isAdmin: Optional[bool] = False):
     try:
@@ -38,29 +42,31 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         return encoded_jwt
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-# def get_current_user(
-#     # db: Session = Depends(SessionLocal),
-#     security_scopes: SecurityScopes = SecurityScopes(),
-#     token: str = Depends(oauth2_scheme),
-#     user_type: UserType = UserType.USER
-# ):
-#     credentials_exception = HTTPException(
-#         status_code=status.HTTP_401_UNAUTHORIZED,
-#         detail="Could not validate credentials",
-#         headers={"WWW-Authenticate": "Bearer"},
-#     )
-#     try:
-#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-#         email: str = payload.get("sub")
-#         token_user_type: str = payload.get("user_type")
-#         if email is None or token_user_type != user_type:
-#             raise credentials_exception
-#         token_data = TokenData(email=email, user_type=token_user_type)
-#     except JWTError:
-#         raise credentials_exception
     
-#     user = get_user(db, token_data.email, user_type)
-#     if user is None:
-#         raise credentials_exception
-#     return user
+def decode_user_token(
+    security_scopes: SecurityScopes = SecurityScopes(),
+    token: str = Depends(user_oauth2_scheme),
+) -> TokenData:
+    try:
+        payload = jwt.decode(token, getenv('SECRET_KEY'), algorithms=[getenv('ALGORITHM')])
+        user_id = payload.get('user_id')
+        
+        if user_id is None:
+            raise cred_exp
+        return TokenData(user_id=int(user_id))
+    except JWTError:
+        raise cred_exp
+    
+def decode_admin_token(
+    security_scopes: SecurityScopes = SecurityScopes(),
+    token: str = Depends(admin_oauth2_scheme),
+) -> TokenData:
+    try:
+        payload = jwt.decode(token, getenv('SECRET_KEY'), algorithms=[getenv('ALGORITHM')])
+        admin_id = payload.get('admin_id')
+        
+        if admin_id is None:
+            raise cred_exp
+        return TokenData(admin_id=int(admin_id))
+    except JWTError:
+        raise cred_exp

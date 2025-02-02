@@ -1,24 +1,15 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional
+from ..base_schemas import UpdateData
 
 
-# Base classess
 class UserRegisterRequestSchema(BaseModel):
     email: EmailStr
     password: str
     
-class UpdateData(BaseModel):
-    full_name: Optional[str] = None
-    
-# Derived classess
-class UserLoginRequestSchema(UserRegisterRequestSchema):
-    pass
-    
-class UpdateUserByIdRequestSchema(BaseModel):
+class UserUpdateProfileRequestSchema(BaseModel):
     update_data: UpdateData
     
-# class UserRegisterRequestSchema(BaseModel):
-#     email: str
-#     password: str
-    
+class UserUpdatePasswordRequestSchema(BaseModel):
+    curr_password: str
+    new_password: str
     

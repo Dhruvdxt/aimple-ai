@@ -1,18 +1,10 @@
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from .routers import user_router
-
-app = FastAPI(
-    title="Aimple AI",
-    version="1.0.0",
-    swagger_ui_init_oauth={
-        "usePkceWithAuthorizationCodeGrant": True,
-    }
-)
+from .config.fastapi_config import app
+from .routers import user_router, admin_router
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,3 +15,4 @@ app.add_middleware(
 )
 
 app.include_router(user_router.router)
+app.include_router(admin_router.router)

@@ -1,24 +1,46 @@
+from sqlalchemy import case, func
 from pydantic import EmailStr
 from ..config.db_config import db
-from ..models.index import users
+from ..models.index import user
+
 
 def create_user(email: EmailStr, hashed_password: str):
-    db.execute(users.insert().values(
+    db.execute(user.insert().values(
         email=email,
-        hashed_password=hashed_password,
+        hashed_password=hashed_password
     ))
     db.commit()
     # db.refresh(db_user)
-    return 
     
 
 def get_user_by_email(email: str):
-    # if user_type == UserType.USER:
-    return db.execute(users.select().where(users.c.email==email)).fetchone()
-    # return db.query(User).filter(User.email == email).first()
-# return conn.execute(admins.select().where(admins.c.email==email)).fetchall()
+    return db.execute(user.select().where(user.c.email==email)).fetchone()
 
 
+def get_user_by_id(id: int):
+    return db.execute(user.select().where(user.c.id==id)).fetchone()
 
-# To do:
-# 1. Exception handling
+
+def get_active_and_total_users_count():
+    active_users_count = func.sum(
+        case((user.c.disabled == False, 1), else_=0)
+    ).label("active_users")
+
+    total_users_count = func.count().label("total_users")
+
+    return db.execute(user.select().with_only_columns(total_users_count, active_users_count)).fetchone()
+
+
+def update_user_profile_by_id(id: int, update_data: dict):
+    db.execute(user.update().where(user.c.id==id).values(**update_data))
+    db.commit()
+    
+    
+def update_user_password_by_id(id: int, update_data: dict):
+    db.execute(user.update().where(user.c.id==id).values(**update_data))
+    db.commit()
+    
+
+def delete_user_by_id(id: int):
+    db.execute(user.delete().where(user.c.id==id))
+    db.commit()

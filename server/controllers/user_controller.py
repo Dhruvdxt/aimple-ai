@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status
-from ..config.db_config import db
+from fastapi.security import OAuth2PasswordRequestForm
 from ..core.utils.auth import authenticate, create_access_token
 from ..core.utils.hashing import get_password_hash, verify_password
-from ..repositories.user_repository import get_user_by_email, create_user
-from ..schemas.user_schemas.request import UserRegisterRequestSchema, UserLoginRequestSchema
-from ..schemas.user_schemas.response import UserRegisterResponseSchema, UserLoginResponseSchema, Token
+from ..repositories.user_repository import *
+from ..schemas.user_schemas.request import *
+from ..schemas.user_schemas.response import *
+from ..schemas.base_schemas import TokenData, UserData
 
 def register(req: UserRegisterRequestSchema) -> UserRegisterResponseSchema:
     try:
@@ -22,13 +23,57 @@ def register(req: UserRegisterRequestSchema) -> UserRegisterResponseSchema:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-def login(req: UserLoginRequestSchema) -> UserLoginResponseSchema:
+def login(req: OAuth2PasswordRequestForm) -> UserLoginResponseSchema:
     try:
-        user = authenticate(req.email, req.password)
+        user = authenticate(req.username, req.password)
         
-        access_token = create_access_token(data={"sub": user.email})
+        access_token = create_access_token(data={"user_id": user.id})
         
-        return UserLoginResponseSchema(status_code=status.HTTP_200_OK, token=Token(access_token=access_token))
+        return UserLoginResponseSchema(status_code=status.HTTP_200_OK, access_token=access_token)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         
+def get_profile(token: TokenData) -> UserGetProfileResponseSchema:
+    try:
+        user = get_user_by_id(token.user_id)
+        return UserGetProfileResponseSchema(
+            status_code=status.HTTP_200_OK,
+            profile_data=UserData(
+                email=user.email,
+                full_name=user.full_name,
+                phone=user.phone, 
+                address=user.address,
+                country=user.country,
+                disabled=user.disabled
+            )
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+def update_profile(req: UserUpdateProfileRequestSchema, token: TokenData) -> UserUpdateProfileResponseSchema:
+    try:
+        update_data: dict = {k: v for k, v in req.update_data.model_dump().items() if v is not None}
+        update_user_profile_by_id(token.user_id, update_data)
+        return UserUpdateProfileResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+     
+def update_password(req: UserUpdatePasswordRequestSchema, token: TokenData) -> UserUpdatePasswordResponseSchema:
+    try:
+        user = get_user_by_id(token.user_id)
+        if not verify_password(req.curr_password, user.hashed_password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="password_not_matched")
+        
+        hashed_password = get_password_hash(req.new_password)
+        update_user_password_by_id(token.user_id, {'hashed_password': hashed_password})
+            
+        return UserUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+def delete(token: TokenData) -> UserDeleteResponseSchema:
+    try:
+        delete_user_by_id(token.user_id)
+        return UserDeleteResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

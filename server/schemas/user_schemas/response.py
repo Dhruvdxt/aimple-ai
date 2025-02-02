@@ -1,32 +1,22 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
+from ..base_schemas import BaseOfAllResponseSchemas, Token, UserData
 
 
-# Base classess
-class BaseOfAllSchemas(BaseModel):
-    status_code: int
+class UserRegisterResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_registered_successfully"
     
-class Token(BaseModel):
-    access_token: str
-    token_type: str = 'bearer'
+class UserLoginResponseSchema(BaseOfAllResponseSchemas, Token):
+    message: str = "user_logged_in_successfully"
     
-class User(BaseModel):
-    email: EmailStr
-    disabled: bool = False
-    full_name: Optional[str] = None
-
-
-# Derived classess
-class UserRegisterResponseSchema(BaseOfAllSchemas):
-    messege: str = "user_registered_successfully"
+class UserGetProfileResponseSchema(BaseOfAllResponseSchemas):
+    profile_data: UserData
     
-class UserLoginResponseSchema(BaseOfAllSchemas):
-    messege: str = "user_logged_in_successfully"
-    token: Token
+class UserUpdateProfileResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_s_profile_updated_successfully"
     
-class GetUserByIdResponseSchema(BaseOfAllSchemas):
-    user: User
+class UserUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_s_password_updated_successfully"
     
-class UpdateUserByIdResponseSchema(BaseOfAllSchemas):
-    messege: str = "user_updated_successfully"
-    
+class UserDeleteResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_deleted_successfully"
