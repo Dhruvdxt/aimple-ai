@@ -22,9 +22,9 @@ async def login(req: Annotated[OAuth2PasswordRequestForm, Depends()]):
     return admin_ctrl.login(req)
 
 
-@router.get("/get_profile", response_model=AdminGetProfileResponseSchema)
-async def get_profile(token: token_dependency):
-    return admin_ctrl.get_profile(token)
+@router.get("/get_profile_data", response_model=AdminGetProfileDataResponseSchema)
+async def get_profile_data(token: token_dependency):
+    return admin_ctrl.get_profile_data(token)
 
 
 @router.get("/get_dashboard_data", response_model=AdminGetDashboardDataResponseSchema)
@@ -32,14 +32,19 @@ async def get_dashboard_data(token: token_dependency):
     return admin_ctrl.get_dashboard_data(token)
 
 
-@router.put("/update_profile", response_model=AdminUpdateProfileResponseSchema)
-async def update_profile(req: AdminUpdateProfileRequestSchema, token: token_dependency):
-    return admin_ctrl.update_profile(req, token)
+@router.put("/update_profile_data", response_model=AdminUpdateProfileDataResponseSchema)
+async def update_profile_data(req: AdminUpdateProfileDataRequestSchema, token: token_dependency):
+    return admin_ctrl.update_profile_data(req, token)
 
 
 @router.put("/update_password", response_model=AdminUpdatePasswordResponseSchema)
 async def update_password(req: AdminUpdatePasswordRequestSchema, token: token_dependency):
     return admin_ctrl.update_password(req, token)
+
+
+@router.put("/enable_or_disable", response_model=AdminEnableOrDisableResponseSchema)
+async def enable_or_disable(req: AdminEnableOrDisableRequestSchema, token: token_dependency):
+    return admin_ctrl.enable_or_disable(req, token)
 
 
 @router.delete("/delete", response_model=AdminDeleteResponseSchema)

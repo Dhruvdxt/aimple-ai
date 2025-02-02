@@ -22,7 +22,8 @@ def register(req: UserRegisterRequestSchema) -> UserRegisterResponseSchema:
         return UserRegisterResponseSchema(status_code=201)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
+
+
 def login(req: OAuth2PasswordRequestForm) -> UserLoginResponseSchema:
     try:
         user = authenticate(req.username, req.password)
@@ -32,11 +33,12 @@ def login(req: OAuth2PasswordRequestForm) -> UserLoginResponseSchema:
         return UserLoginResponseSchema(status_code=status.HTTP_200_OK, access_token=access_token)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        
-def get_profile(token: TokenData) -> UserGetProfileResponseSchema:
+
+
+def get_profile_data(token: TokenData) -> UserGetProfileDataResponseSchema:
     try:
         user = get_user_by_id(token.user_id)
-        return UserGetProfileResponseSchema(
+        return UserGetProfileDataResponseSchema(
             status_code=status.HTTP_200_OK,
             profile_data=UserData(
                 email=user.email,
@@ -50,13 +52,15 @@ def get_profile(token: TokenData) -> UserGetProfileResponseSchema:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-def update_profile(req: UserUpdateProfileRequestSchema, token: TokenData) -> UserUpdateProfileResponseSchema:
+
+def update_profile_data(req: UserUpdateProfileDataRequestSchema, token: TokenData) -> UserUpdateProfileDataResponseSchema:
     try:
         update_data: dict = {k: v for k, v in req.update_data.model_dump().items() if v is not None}
-        update_user_profile_by_id(token.user_id, update_data)
-        return UserUpdateProfileResponseSchema(status_code=status.HTTP_200_OK)
+        update_user_profile_data_by_id(token.user_id, update_data)
+        return UserUpdateProfileDataResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+     
      
 def update_password(req: UserUpdatePasswordRequestSchema, token: TokenData) -> UserUpdatePasswordResponseSchema:
     try:
@@ -71,6 +75,7 @@ def update_password(req: UserUpdatePasswordRequestSchema, token: TokenData) -> U
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
+
 def delete(token: TokenData) -> UserDeleteResponseSchema:
     try:
         delete_user_by_id(token.user_id)

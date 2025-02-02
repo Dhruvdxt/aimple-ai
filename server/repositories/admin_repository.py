@@ -22,12 +22,17 @@ def get_admin_by_id(id: int):
 
 
 def get_total_admins_count():
-    total_admins_count = func.count().label("total_admins")
+    total_admins_count = func.count(admin.c.id).label("total_admins")
+    
+    return db.execute(
+        admin.select()
+        .with_only_columns(
+            total_admins_count,
+        )
+    ).fetchone()
 
-    return db.execute(admin.select().with_only_columns(total_admins_count)).scalar()
 
-
-def update_admin_profile_by_id(id: int, update_data: dict):
+def update_admin_profile_data_by_id(id: int, update_data: dict):
     db.execute(admin.update().where(admin.c.id==id).values(**update_data))
     db.commit()
     

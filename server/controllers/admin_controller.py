@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from ..core.utils.auth import authenticate, create_access_token
 from ..core.utils.hashing import get_password_hash, verify_password
 from ..repositories.admin_repository import *
-from ..repositories.user_repository import get_active_and_total_users_count
+from ..repositories.user_repository import get_user_by_id, get_active_and_total_users_count, update_user_profile_data_by_id
 from ..schemas.admin_schemas.request import *
 from ..schemas.admin_schemas.response import *
 from ..schemas.base_schemas import TokenData, AdminData
@@ -23,6 +23,7 @@ def register(req: AdminRegisterRequestSchema) -> AdminRegisterResponseSchema:
         return AdminRegisterResponseSchema(status_code=201)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+   
     
 def login(req: OAuth2PasswordRequestForm) -> AdminLoginResponseSchema:
     try:
@@ -33,11 +34,12 @@ def login(req: OAuth2PasswordRequestForm) -> AdminLoginResponseSchema:
         return AdminLoginResponseSchema(status_code=status.HTTP_200_OK, access_token=access_token)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+  
         
-def get_profile(token: TokenData) -> AdminGetProfileResponseSchema:
+def get_profile_data(token: TokenData) -> AdminGetProfileDataResponseSchema:
     try:
         admin = get_admin_by_id(token.admin_id)
-        return AdminGetProfileResponseSchema(
+        return AdminGetProfileDataResponseSchema(
             status_code=status.HTTP_200_OK,
             profile_data=AdminData(
                 email=admin.email,
@@ -55,7 +57,7 @@ def get_profile(token: TokenData) -> AdminGetProfileResponseSchema:
 def get_dashboard_data(token: TokenData) -> AdminGetDashboardDataResponseSchema:
     try:
         users_data = get_active_and_total_users_count()
-        total_admins = get_total_admins_count()
+        admins_data = get_total_admins_count()
         
         return AdminGetDashboardDataResponseSchema(
             status_code=status.HTTP_200_OK,
@@ -63,20 +65,21 @@ def get_dashboard_data(token: TokenData) -> AdminGetDashboardDataResponseSchema:
                 total_users=users_data.total_users,
                 active_users=users_data.active_users,
                 inactive_users=users_data.total_users - users_data.active_users,
-                total_admins=total_admins
+                total_admins=admins_data.total_admins
             )
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 
-def update_profile(req: AdminUpdateProfileRequestSchema, token: TokenData) -> AdminUpdateProfileResponseSchema:
+def update_profile_data(req: AdminUpdateProfileDataRequestSchema, token: TokenData) -> AdminUpdateProfileDataResponseSchema:
     try:
         update_data: dict = {k: v for k, v in req.update_data.model_dump().items() if v is not None}
-        update_admin_profile_by_id(token.admin_id, update_data)
-        return AdminUpdateProfileResponseSchema(status_code=status.HTTP_200_OK)
+        update_admin_profile_data_by_id(token.admin_id, update_data)
+        return AdminUpdateProfileDataResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
      
 def update_password(req: AdminUpdatePasswordRequestSchema, token: TokenData) -> AdminUpdatePasswordResponseSchema:
     try:
@@ -90,6 +93,20 @@ def update_password(req: AdminUpdatePasswordRequestSchema, token: TokenData) -> 
         return AdminUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    
+def enable_or_disable(req: AdminEnableOrDisableRequestSchema, token: TokenData) -> AdminEnableOrDisableResponseSchema:
+    try:
+        user = get_user_by_id(req.user_id)
+        
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user_not_found")
+        
+        update_user_profile_data_by_id(req.user_id, {'disabled': not user.disabled})
+        return AdminEnableOrDisableResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
     
 def delete(token: TokenData) -> AdminDeleteResponseSchema:
     try:

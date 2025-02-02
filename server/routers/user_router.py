@@ -22,14 +22,14 @@ async def login(req: Annotated[OAuth2PasswordRequestForm, Depends()]):
     return user_ctrl.login(req)
 
 
-@router.get("/get_profile", response_model=UserGetProfileResponseSchema)
-async def get_profile(token: token_dependency):
-    return user_ctrl.get_profile(token)
+@router.get("/get_profile_data", response_model=UserGetProfileDataResponseSchema)
+async def get_profile_data(token: token_dependency):
+    return user_ctrl.get_profile_data(token)
 
 
-@router.put("/update_profile", response_model=UserUpdateProfileResponseSchema)
-async def update_profile(req: UserUpdateProfileRequestSchema, token: token_dependency):
-    return user_ctrl.update_profile(req, token)
+@router.put("/update_profile_data", response_model=UserUpdateProfileDataResponseSchema)
+async def update_profile_data(req: UserUpdateProfileDataRequestSchema, token: token_dependency):
+    return user_ctrl.update_profile_data(req, token)
 
 
 @router.put("/update_password", response_model=UserUpdatePasswordResponseSchema)

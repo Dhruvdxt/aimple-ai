@@ -4,8 +4,12 @@ from ..user_schemas.request import *
 class AdminRegisterRequestSchema(UserRegisterRequestSchema):
     pass
     
-class AdminUpdateProfileRequestSchema(UserUpdateProfileRequestSchema):
+class AdminUpdateProfileDataRequestSchema(UserUpdateProfileDataRequestSchema):
     pass
     
 class AdminUpdatePasswordRequestSchema(UserUpdatePasswordRequestSchema):
     pass
+
+class AdminEnableOrDisableRequestSchema(BaseModel):
+    user_id: int
+    

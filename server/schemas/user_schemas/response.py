@@ -9,10 +9,10 @@ class UserRegisterResponseSchema(BaseOfAllResponseSchemas):
 class UserLoginResponseSchema(BaseOfAllResponseSchemas, Token):
     message: str = "user_logged_in_successfully"
     
-class UserGetProfileResponseSchema(BaseOfAllResponseSchemas):
+class UserGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
     profile_data: UserData
     
-class UserUpdateProfileResponseSchema(BaseOfAllResponseSchemas):
+class UserUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_s_profile_updated_successfully"
     
 class UserUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):

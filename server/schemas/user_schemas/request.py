@@ -6,7 +6,7 @@ class UserRegisterRequestSchema(BaseModel):
     email: EmailStr
     password: str
     
-class UserUpdateProfileRequestSchema(BaseModel):
+class UserUpdateProfileDataRequestSchema(BaseModel):
     update_data: UpdateData
     
 class UserUpdatePasswordRequestSchema(BaseModel):

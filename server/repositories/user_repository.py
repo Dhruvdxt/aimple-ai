@@ -22,16 +22,19 @@ def get_user_by_id(id: int):
 
 
 def get_active_and_total_users_count():
-    active_users_count = func.sum(
-        case((user.c.disabled == False, 1), else_=0)
-    ).label("active_users")
+    total_users_count = func.count(user.c.id).label("total_users")
+    active_users_count = func.sum(case((user.c.disabled == False, 1), else_=0)).label("active_users")
+    
+    return db.execute(
+        user.select()
+        .with_only_columns(
+            total_users_count,
+            active_users_count
+        )
+    ).fetchone()
 
-    total_users_count = func.count().label("total_users")
 
-    return db.execute(user.select().with_only_columns(total_users_count, active_users_count)).fetchone()
-
-
-def update_user_profile_by_id(id: int, update_data: dict):
+def update_user_profile_data_by_id(id: int, update_data: dict):
     db.execute(user.update().where(user.c.id==id).values(**update_data))
     db.commit()
     
