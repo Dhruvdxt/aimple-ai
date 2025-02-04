@@ -19,8 +19,10 @@ class UpdateData(BaseModel):
     country: Optional[str] = None
     
 class UserData(UpdateData):
+    id: int
     email: EmailStr
     disabled: bool = False
+    verified: bool = False
     
 class AdminData(UserData):
     pass
@@ -29,5 +31,10 @@ class DashboardData(BaseModel):
     total_users: int
     active_users: int
     inactive_users: int
+    verified_users: int
+    unverified_users: int
     total_admins: int
+    
+class VerifyEmailResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "email_verified_successfully"
     

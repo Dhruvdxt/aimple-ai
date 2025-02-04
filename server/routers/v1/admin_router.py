@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from ..controllers import admin_controller as admin_ctrl
-from ..core.utils.auth import decode_admin_token
-from ..schemas.admin_schemas.request import *
-from ..schemas.admin_schemas.response import *
-from ..schemas.base_schemas import TokenData
+from ...controllers.v1.index import admin_controller as admin_ctrl
+from ...core.utils.auth import decode_admin_token
+from ...schemas.admin_schemas.request import *
+from ...schemas.admin_schemas.response import *
+from ...schemas.base_schemas import TokenData
 
 
 router = APIRouter(prefix="/admin", tags=['Admin'])

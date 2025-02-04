@@ -12,6 +12,9 @@ class UserLoginResponseSchema(BaseOfAllResponseSchemas, Token):
 class UserGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
     profile_data: UserData
     
+class UserSendVerifyEmailMailResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "verification_mail_has_been_sent_successfully"
+    
 class UserUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_s_profile_updated_successfully"
     

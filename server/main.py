@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from .config.fastapi_config import app
-from .routers import user_router, admin_router
+from .routers.v1.index import router as v1
+from .routers.v2.index import router as v2
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,5 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user_router.router)
-app.include_router(admin_router.router)
+
+app.include_router(v1)
+app.include_router(v2)

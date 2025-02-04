@@ -10,5 +10,6 @@ user = Table(
     Column('phone', String(255), default="NA"),
     Column('address', String(255), default="NA"),
     Column('country', String(255), default="NA"),
-    Column('disabled', Boolean, default=False)
+    Column('disabled', Boolean, default=False),
+    Column('verified', Boolean, default=False)
 )

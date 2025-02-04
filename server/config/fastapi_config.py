@@ -14,7 +14,7 @@ app.add_security_scheme = {
         "type": "oauth2",
         "flows": {
             "password": {
-                "tokenUrl": "/user/login",
+                "tokenUrl": "api/v1/user/login",
                 "scopes": {}
             }
        }
@@ -23,7 +23,7 @@ app.add_security_scheme = {
         "type": "oauth2",
         "flows": {
             "password": {
-                "tokenUrl": "/admin/login",
+                "tokenUrl": "api/v1/admin/login",
                 "scopes": {}
             }
        }
@@ -31,13 +31,13 @@ app.add_security_scheme = {
 }
 
 user_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="user/login",
+    tokenUrl="api/v1/user/login",
     scheme_name="user_auth",
     auto_error=True
 )
 
 admin_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="admin/login",
+    tokenUrl="api/v1/admin/login",
     scheme_name="admin_auth",
     auto_error=True
 )

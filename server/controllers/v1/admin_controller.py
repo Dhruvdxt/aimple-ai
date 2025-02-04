@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from ..core.utils.auth import authenticate, create_access_token
-from ..core.utils.hashing import get_password_hash, verify_password
-from ..repositories.admin_repository import *
-from ..repositories.user_repository import get_user_by_id, get_active_and_total_users_count, update_user_profile_data_by_id
-from ..schemas.admin_schemas.request import *
-from ..schemas.admin_schemas.response import *
-from ..schemas.base_schemas import TokenData, AdminData
+from ...core.utils.auth import authenticate, gen_access_token
+from ...core.utils.hashing import get_password_hash, verify_password
+from ...repositories.admin_repository import *
+from ...repositories.user_repository import get_user_by_id, get_user_data, update_user_profile_data_by_id
+from ...schemas.admin_schemas.request import *
+from ...schemas.admin_schemas.response import *
+from ...schemas.base_schemas import TokenData, AdminData
 
 def register(req: AdminRegisterRequestSchema) -> AdminRegisterResponseSchema:
     try:
@@ -29,7 +29,7 @@ def login(req: OAuth2PasswordRequestForm) -> AdminLoginResponseSchema:
     try:
         admin = authenticate(req.username, req.password, isAdmin=True)
         
-        access_token = create_access_token(data={"admin_id": admin.id})
+        access_token = gen_access_token(data={"admin_id": admin.id})
         
         return AdminLoginResponseSchema(status_code=status.HTTP_200_OK, access_token=access_token)
     except Exception as e:
@@ -42,6 +42,7 @@ def get_profile_data(token: TokenData) -> AdminGetProfileDataResponseSchema:
         return AdminGetProfileDataResponseSchema(
             status_code=status.HTTP_200_OK,
             profile_data=AdminData(
+                id=admin.id,
                 email=admin.email,
                 full_name=admin.full_name,
                 phone=admin.phone, 
@@ -56,8 +57,8 @@ def get_profile_data(token: TokenData) -> AdminGetProfileDataResponseSchema:
     
 def get_dashboard_data(token: TokenData) -> AdminGetDashboardDataResponseSchema:
     try:
-        users_data = get_active_and_total_users_count()
-        admins_data = get_total_admins_count()
+        users_data = get_user_data()
+        admins_data = get_admin_data()
         
         return AdminGetDashboardDataResponseSchema(
             status_code=status.HTTP_200_OK,
@@ -65,6 +66,8 @@ def get_dashboard_data(token: TokenData) -> AdminGetDashboardDataResponseSchema:
                 total_users=users_data.total_users,
                 active_users=users_data.active_users,
                 inactive_users=users_data.total_users - users_data.active_users,
+                verified_users=users_data.verified_users,
+                unverified_users=users_data.total_users - users_data.verified_users,
                 total_admins=admins_data.total_admins
             )
         )

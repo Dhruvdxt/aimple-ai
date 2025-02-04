@@ -21,7 +21,7 @@ def get_admin_by_id(id: int):
     return db.execute(admin.select().where(admin.c.id==id)).fetchone()
 
 
-def get_total_admins_count():
+def get_admin_data():
     total_admins_count = func.count(admin.c.id).label("total_admins")
     
     return db.execute(
