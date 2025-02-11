@@ -11,5 +11,6 @@ user = Table(
     Column('address', String(255), default="NA"),
     Column('country', String(255), default="NA"),
     Column('disabled', Boolean, default=False),
-    Column('verified', Boolean, default=False)
+    Column('verified', Boolean, default=False),
+    Column('is_mfa_enabled', Boolean, default=False),
 )

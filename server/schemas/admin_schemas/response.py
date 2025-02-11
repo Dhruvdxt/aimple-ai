@@ -4,8 +4,11 @@ from ..base_schemas import BaseOfAllResponseSchemas, Token, AdminData, Dashboard
 class AdminRegisterResponseSchema(BaseOfAllResponseSchemas):
     message: str = "admin_registered_successfully"
     
-class AdminLoginResponseSchema(BaseOfAllResponseSchemas, Token):
+class AdminLoginResponseSchema(BaseOfAllResponseSchemas):
     message: str = "admin_logged_in_successfully"
+    
+class AdminLogoutResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "admin_logged_out_successfully"
     
 class AdminGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
     profile_data: AdminData
@@ -18,6 +21,9 @@ class AdminUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     
 class AdminUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):
     message: str = "admin_s_password_updated_successfully"
+    
+class AdminUpdateUserPasswordResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_s_password_updated_successfully"
     
 class AdminEnableOrDisableResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_enabled_or_disabled_successfully"

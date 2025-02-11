@@ -23,6 +23,7 @@ class UserData(UpdateData):
     email: EmailStr
     disabled: bool = False
     verified: bool = False
+    is_mfa_enabled: bool = False
     
 class AdminData(UserData):
     pass

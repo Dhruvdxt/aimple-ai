@@ -12,6 +12,8 @@ class ActivityType(str, PyEnum):
     ACCOUNT_DELETE = "ACCOUNT_DELETE"
     ENABLE_OR_DISABLE = "ENABLE_OR_DISABLE"
     EMAIL_VERIFIED = "EMAIL_VERIFIED"
+    MFA_ENABLED = "MFA_ENABLED"
+    MFA_DISABLED = "MFA_DISABLED"
  
 activity = Table(
     "activity", meta,

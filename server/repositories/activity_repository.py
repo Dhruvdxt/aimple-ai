@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlalchemy import Enum
 from ..config.db_config import db
 from ..models.index import activity, ActivityType
