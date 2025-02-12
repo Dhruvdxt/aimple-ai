@@ -5,7 +5,7 @@ from ...repositories.user_repository import *
 from ...schemas.base_schemas import VerifyEmailResponseSchema
 
 
-def verify_email(token: str, request: Request) -> VerifyEmailResponseSchema:
+def verify_email(token: str) -> VerifyEmailResponseSchema:
     try:
         payload = decode_access_token(token)
         user = get_user_by_id(payload.get('user_id'))
@@ -15,8 +15,7 @@ def verify_email(token: str, request: Request) -> VerifyEmailResponseSchema:
         
         update_user_profile_data_by_id(user.id, {'verified': True})
         
-        ip_address = request.client.host
-        create_activity(user_id=user.id, admin_id=0, activity_type=ActivityType.EMAIL_VERIFIED, ip_address=ip_address)
+        create_activity(user_id=user.id, activity_type=ActivityType.EMAIL_VERIFIED)
         
         return VerifyEmailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:

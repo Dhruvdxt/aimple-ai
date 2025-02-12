@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
-from ..base_schemas import BaseOfAllResponseSchemas, Token, UserData
+from ..base_schemas import BaseOfAllResponseSchemas, UserData, SessionData, ActivityData
 
 
 class UserRegisterResponseSchema(BaseOfAllResponseSchemas):
@@ -14,6 +14,12 @@ class UserLogoutResponseSchema(BaseOfAllResponseSchemas):
     
 class UserGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
     profile_data: UserData
+    
+class UserGetSessionsResponseSchema(BaseOfAllResponseSchemas):
+    sessions_data: list[SessionData]
+    
+class UserGetActivitiesResponseSchema(BaseOfAllResponseSchemas):
+    activities_data: list[ActivityData]
     
 class UserSendVerifyEmailMailResponseSchema(BaseOfAllResponseSchemas):
     message: str = "verification_mail_has_been_sent_successfully"

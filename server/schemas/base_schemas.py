@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from ..models.activity_model import ActivityType
 
 class BaseOfAllResponseSchemas(BaseModel):
     status_code: int
@@ -38,4 +39,21 @@ class DashboardData(BaseModel):
     
 class VerifyEmailResponseSchema(BaseOfAllResponseSchemas):
     message: str = "email_verified_successfully"
+    
+class SessionData(BaseModel):
+    session_id: str
+    user_id: int
+    admin_id: Optional[int]
+    is_admin: Optional[bool]
+    ip_address: str
+    device: Optional[str]
+    created_at: str
+    expired_at: str
+    
+class ActivityData(BaseModel):
+    id: int
+    session_id: Optional[str]
+    user_id: Optional[int]
+    activity_type: ActivityType
+    timestamp: str
     

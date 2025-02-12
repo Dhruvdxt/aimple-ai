@@ -3,6 +3,9 @@ from ..user_schemas.request import *
 
 class AdminRegisterRequestSchema(UserRegisterRequestSchema):
     pass
+
+class AdminLoginRequestSchema(UserLoginRequestSchema):
+    pass
     
 class AdminUpdateProfileDataRequestSchema(UserUpdateProfileDataRequestSchema):
     pass

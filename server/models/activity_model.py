@@ -7,6 +7,7 @@ from ..config.db_config import meta
 class ActivityType(str, PyEnum):
     REGISTRATION = "REGISTRATION"
     LOGIN = "LOGIN"
+    LOGOUT = "LOGOUT"
     UPDATE_PROFILE = "UPDATE_PROFILE"
     PASSWORD_RESET = "PASSWORD_RESET"
     ACCOUNT_DELETE = "ACCOUNT_DELETE"
@@ -18,9 +19,8 @@ class ActivityType(str, PyEnum):
 activity = Table(
     "activity", meta,
     Column('id', Integer, autoincrement=True, primary_key=True),
-    Column('user_id', Integer, nullable=False),
-    Column('admin_id', Integer, nullable=True),
+    Column('session_id', String(255), nullable=True),
+    Column('user_id', Integer, nullable=True),
     Column('activity_type', Enum(ActivityType), nullable=False),
-    Column('ip_address', String(255), nullable=False),
     Column('timestamp', DateTime, default=func.now())
 )

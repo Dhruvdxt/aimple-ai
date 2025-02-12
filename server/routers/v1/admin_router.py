@@ -20,8 +20,8 @@ async def register(req: AdminRegisterRequestSchema):
 
 @router.post("/login", response_model=AdminLoginResponseSchema)
 @limiter.limit("3/minute")
-async def login(req_body: Annotated[OAuth2PasswordRequestForm, Depends()], request: Request, response: Response):
-    return admin_ctrl.login(req_body, request, response)
+async def login(req_body: AdminLoginRequestSchema, request: Request, response: Response):
+    return await admin_ctrl.login(req_body, request, response)
 
 
 @router.get("/logout", response_model=AdminLogoutResponseSchema)
@@ -50,13 +50,13 @@ async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id
 
 
 @router.put("/update_user_password", response_model=AdminUpdateUserPasswordResponseSchema)
-async def update_password(req_body: AdminUpdateUserPasswordRequestSchema, session_id: session_id_dependency, request: Request):
-    return admin_ctrl.update_user_password(req_body, session_id, request)
+async def update_password(req_body: AdminUpdateUserPasswordRequestSchema, session_id: session_id_dependency):
+    return admin_ctrl.update_user_password(req_body, session_id)
 
 
 @router.put("/enable_or_disable", response_model=AdminEnableOrDisableResponseSchema)
-async def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: session_id_dependency, request: Request):
-    return admin_ctrl.enable_or_disable(req_body, session_id, request)
+async def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: session_id_dependency):
+    return admin_ctrl.enable_or_disable(req_body, session_id)
 
 
 @router.delete("/delete", response_model=AdminDeleteResponseSchema)

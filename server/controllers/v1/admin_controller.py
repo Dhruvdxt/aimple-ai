@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status, Request, Response
-from fastapi.security import OAuth2PasswordRequestForm
-from ...core.utils.auth import authenticate, gen_access_token
+from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
 from ...repositories.activity_repository import *
 from ...repositories.admin_repository import *
@@ -8,7 +7,7 @@ from ...repositories.session_repository import *
 from ...repositories.user_repository import *
 from ...schemas.admin_schemas.request import *
 from ...schemas.admin_schemas.response import *
-from ...schemas.base_schemas import TokenData, AdminData
+from ...schemas.base_schemas import AdminData
 
 def register(req: AdminRegisterRequestSchema) -> AdminRegisterResponseSchema:
     try:
@@ -21,17 +20,16 @@ def register(req: AdminRegisterRequestSchema) -> AdminRegisterResponseSchema:
         hashed_password = get_password_hash(req.password)
         
         create_admin(req.email, hashed_password);
-        
+                
         return AdminRegisterResponseSchema(status_code=201)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
    
     
-def login(req_body: OAuth2PasswordRequestForm, request: Request, response: Response) -> AdminLoginResponseSchema:
+async def login(req_body: AdminLoginRequestSchema, request: Request, response: Response) -> AdminLoginResponseSchema:
     try:
-        admin = authenticate(req_body.email, req_body.password, is_admin=True)
-        
-        # access_token = gen_access_token(data={"admin_id": admin.id})
+        await check_login_attempts(req_body.email)
+        admin = await authenticate(req_body.email, req_body.password, is_admin=True)
         
         ip_address = request.client.host
         
@@ -49,6 +47,8 @@ def login(req_body: OAuth2PasswordRequestForm, request: Request, response: Respo
             samesite="Lax"
         )
         
+        create_activity(session_id=session.session_id, activity_type=ActivityType.LOGIN)
+        
         return AdminLoginResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -58,10 +58,12 @@ def logout(request: Request, response: Response) -> AdminLogoutResponseSchema:
     try:
         session_id = request.cookies.get(getenv('SESSION_COOKIE_NAME'))
 
-        if session_id:
-            delete_session_by_session_id(session_id)
+        # if session_id:
+        #     delete_session_by_session_id(session_id)
 
         response.delete_cookie(getenv('SESSION_COOKIE_NAME'))
+        
+        create_activity(session_id=session_id, activity_type=ActivityType.LOGOUT)
 
         return AdminLogoutResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -113,6 +115,8 @@ def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_i
         session = get_session_by_session_id(session_id)
         update_data: dict = {k: v for k, v in req_body.update_data.model_dump().items() if v is not None}
         update_admin_profile_data_by_id(session.admin_id, update_data)
+        
+        create_activity(session_id=session_id, activity_type=ActivityType.UPDATE_PROFILE)
         return AdminUpdateProfileDataResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -127,29 +131,28 @@ def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: str)
         
         hashed_password = get_password_hash(req_body.new_password)
         update_admin_password_by_id(session.admin_id, {'hashed_password': hashed_password})
+        
+        create_activity(session_id=session_id, activity_type=ActivityType.PASSWORD_RESET)
             
         return AdminUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     
-def update_user_password(req_body: AdminUpdateUserPasswordRequestSchema, session_id: str, request: Request) -> AdminUpdateUserPasswordResponseSchema:
+def update_user_password(req_body: AdminUpdateUserPasswordRequestSchema, session_id: str) -> AdminUpdateUserPasswordResponseSchema:
     try:
-        session = get_session_by_session_id(session_id)
         hashed_password = get_password_hash(req_body.new_password)
         update_user_password_by_id(req_body.user_id, {'hashed_password': hashed_password})
         
-        ip_address = request.client.host
-        create_activity(user_id=req_body.user_id, admin_id=session.admin_id, activity_type=ActivityType.PASSWORD_RESET, ip_address=ip_address)
+        create_activity(session_id=session_id, user_id=req_body.user_id, activity_type=ActivityType.PASSWORD_RESET)
             
         return AdminUpdateUserPasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     
-def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: str, request: Request) -> AdminEnableOrDisableResponseSchema:
+def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: str) -> AdminEnableOrDisableResponseSchema:
     try:
-        session = get_session_by_session_id(session_id)
         user = get_user_by_id(req_body.user_id)
         
         if user is None:
@@ -157,8 +160,7 @@ def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: s
         
         update_user_profile_data_by_id(req_body.user_id, {'disabled': not user.disabled})
         
-        ip_address = request.client.host
-        create_activity(user_id=user.id, admin_id=session.admin_id, activity_type=ActivityType.ENABLE_OR_DISABLE, ip_address=ip_address)
+        create_activity(session_id=session_id, user_id=user.id, activity_type=ActivityType.ENABLE_OR_DISABLE)
         
         return AdminEnableOrDisableResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:

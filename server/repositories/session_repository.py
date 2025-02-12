@@ -27,6 +27,8 @@ def create_session(user_id: Optional[int] = None, admin_id: Optional[int] = None
 def get_session_by_session_id(session_id: str):
     return db.execute(session.select().where(session.c.session_id==session_id)).fetchone()
 
+def get_sessions_by_user_id(user_id: int):
+    return db.execute(session.select().where(session.c.user_id==user_id)).fetchall()
 
 def delete_session_by_session_id(session_id: str):
     db.execute(session.delete().where(session.c.session_id==session_id))

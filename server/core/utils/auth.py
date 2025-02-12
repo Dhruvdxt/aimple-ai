@@ -1,18 +1,14 @@
 from fastapi import HTTPException, Depends, Security, status, Request, Response
-from fastapi.security import SecurityScopes
 from typing import Optional
 from datetime import datetime, timedelta
 from os import getenv
 from jose import JWTError, jwt
 from ...config.db_config import redis
-from ...config.fastapi_config import user_oauth2_scheme, admin_oauth2_scheme
 from .errors import cred_exp
 from .hashing import verify_password
-from ...repositories.activity_repository import *
 from ...repositories.admin_repository import get_admin_by_email
 from ...repositories.session_repository import *
 from ...repositories.user_repository import get_user_by_email
-from ...schemas.base_schemas import TokenData
 
 
 async def authenticate(email: str, password: str, is_admin: Optional[bool] = False):
@@ -47,7 +43,7 @@ def get_session_id(request: Request):
         session = get_session_by_session_id(session_id)
 
         if session.expired_at <= datetime.now():
-            delete_session_by_session_id(session_id)
+            # delete_session_by_session_id(session_id)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="session_expired")
 
         return session_id
@@ -59,15 +55,20 @@ async def check_login_attempts(email: str):
     lock_key = f"lockout:{email}"
     fail_key = f"login_attempts:{email}"
     
+    
+    
     is_locked = await redis.get(lock_key)
+    
     
     if is_locked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="your_account_is_locked_due_to_multiple_failed_login_attempts.try_again_later."
         )
+    
         
     failed_attempts = await redis.get(fail_key)
+
     
     if failed_attempts and int(failed_attempts) >= int(getenv('FAILED_ATTEMPT_LIMIT')):
         await redis.set(lock_key, "LOCKED", ex=int(getenv('BLOCK_DURATION')))
@@ -76,6 +77,7 @@ async def check_login_attempts(email: str):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="too_many_failed_attempts.your_account_is_locked_for_2_hours."
         )
+    
 
 
 async def record_failed_attempt(email: str):

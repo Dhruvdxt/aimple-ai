@@ -6,8 +6,11 @@ ENV/
 # Environment variables
 .env
 
-# Raw file
+# Unnecessary files
 main2.py
+
+# Unnecessary folders
+public/
 
 # Python
 __pycache__/

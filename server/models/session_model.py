@@ -7,7 +7,7 @@ session = Table(
     Column('user_id', Integer, nullable=True),
     Column('admin_id', Integer, nullable=True),
     Column('is_admin', Boolean, default=False),
-    Column('ip_address', String(255), nullable=True),
+    Column('ip_address', String(255), nullable=False),
     Column('device', String(255), nullable=True),
     Column('created_at', DateTime),
     Column('expired_at', DateTime)
