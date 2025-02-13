@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
-from ..base_schemas import BaseOfAllResponseSchemas, UserData, SessionData, ActivityData
+from ..base_schemas import *
 
 
 class UserRegisterResponseSchema(BaseOfAllResponseSchemas):
@@ -13,7 +13,7 @@ class UserLogoutResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_logged_out_successfully"
     
 class UserGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
-    profile_data: UserData
+    profile_data: ProfileData
     
 class UserGetSessionsResponseSchema(BaseOfAllResponseSchemas):
     sessions_data: list[SessionData]

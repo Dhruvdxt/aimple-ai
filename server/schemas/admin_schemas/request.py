@@ -10,11 +10,8 @@ class AdminLoginRequestSchema(UserLoginRequestSchema):
 class AdminUpdateProfileDataRequestSchema(UserUpdateProfileDataRequestSchema):
     pass
     
-class AdminUpdatePasswordRequestSchema(UserUpdatePasswordRequestSchema):
-    pass
-
-class AdminUpdateUserPasswordRequestSchema(BaseModel):
-    user_id: int
+class AdminUpdatePasswordRequestSchema(BaseModel):
+    curr_password: Optional[str] = None
     new_password: str
 
 class AdminEnableOrDisableRequestSchema(BaseModel):

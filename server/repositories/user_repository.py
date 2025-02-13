@@ -14,6 +14,10 @@ def create_user(email: EmailStr, hashed_password: str):
     return get_user_by_email(email)
     # db.refresh(db_user)
     
+    
+def get_all_users():
+    return db.execute(user.select()).fetchall()
+    
 
 def get_user_by_email(email: str):
     return db.execute(user.select().where(user.c.email==email)).fetchone()

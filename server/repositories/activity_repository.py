@@ -17,7 +17,7 @@ def create_activity(activity_type: Enum, session_id: Optional[str] = None, user_
     db.commit()
     # db.refresh(db_user)
     
-def get_activities():
+def get_all_activities():
     return db.execute(activity.select()).fetchall()
 
 def get_activities_by_user_id(user_id: int):

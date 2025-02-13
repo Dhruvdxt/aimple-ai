@@ -3,6 +3,7 @@ from os import getenv
 import os
 import pyotp
 import qrcode
+import user_agents
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
 from ...repositories.activity_repository import *
@@ -11,8 +12,10 @@ from ...repositories.session_repository import *
 from ...repositories.user_repository import *
 from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
-from ...schemas.base_schemas import UserData, SessionData
+from ...schemas.base_schemas import *
 from ...services.mail_service.mail_types import verify_email, password_reset
+
+
 
 def register(req_body: UserRegisterRequestSchema) -> UserRegisterResponseSchema:
     try:
@@ -53,10 +56,14 @@ async def login(req_body: UserLoginRequestSchema, request: Request, response: Re
         await delete_record(user.id)
         
         ip_address = request.client.host
+        user_agent = user_agents.parse(request.headers.get('user-agent'))
         
         session = create_session(
             user_id=user.id,
-            ip_address=ip_address
+            ip_address=ip_address,
+            device=user_agent.device.family,
+            os=user_agent.os.family,
+            browser=user_agent.browser.family
         )
         
         response.set_cookie(
@@ -95,7 +102,7 @@ def get_profile_data(session_id: str) -> UserGetProfileDataResponseSchema:
         user = get_user_by_id(session.user_id)
         return UserGetProfileDataResponseSchema(
             status_code=status.HTTP_200_OK,
-            profile_data=UserData(
+            profile_data=ProfileData(
                 id=user.id,
                 email=user.email,
                 full_name=user.full_name,
@@ -127,6 +134,8 @@ def get_sessions(session_id: str) -> UserGetSessionsResponseSchema:
                     is_admin=s.is_admin,
                     ip_address=s.ip_address,
                     device=s.device,
+                    os=s.os,
+                    browser=s.browser,
                     created_at=s.created_at.strftime("%B %d, %Y at %I:%M %p"),
                     expired_at=s.expired_at.strftime("%B %d, %Y at %I:%M %p")
                 )

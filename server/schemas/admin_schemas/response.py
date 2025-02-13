@@ -1,4 +1,5 @@
-from ..base_schemas import BaseOfAllResponseSchemas, Token, AdminData, DashboardData
+from ..user_schemas.response import *
+from ..base_schemas import *
 
 
 class AdminRegisterResponseSchema(BaseOfAllResponseSchemas):
@@ -10,20 +11,26 @@ class AdminLoginResponseSchema(BaseOfAllResponseSchemas):
 class AdminLogoutResponseSchema(BaseOfAllResponseSchemas):
     message: str = "admin_logged_out_successfully"
     
-class AdminGetProfileDataResponseSchema(BaseOfAllResponseSchemas):
-    profile_data: AdminData
+class AdminGetUsersResponseSchema(BaseOfAllResponseSchemas):
+    users_data: list[UserData]
     
+class AdminGetProfileDataResponseSchema(UserGetProfileDataResponseSchema):
+    pass
+
 class AdminGetDashboardDataResponseSchema(BaseOfAllResponseSchemas):
     dashboard_data: DashboardData
     
+class AdminGetSessionsResponseSchema(UserGetSessionsResponseSchema):
+    pass
+
+class AdminGetActivitiesResponseSchema(UserGetActivitiesResponseSchema):
+    pass
+
 class AdminUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
-    message: str = "admin_s_profile_updated_successfully"
+    message: str = "profile_updated_successfully"
     
 class AdminUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):
-    message: str = "admin_s_password_updated_successfully"
-    
-class AdminUpdateUserPasswordResponseSchema(BaseOfAllResponseSchemas):
-    message: str = "user_s_password_updated_successfully"
+    message: str = "password_updated_successfully"
     
 class AdminEnableOrDisableResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_enabled_or_disabled_successfully"

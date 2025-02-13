@@ -19,16 +19,17 @@ class UpdateData(BaseModel):
     address: Optional[str] = None
     country: Optional[str] = None
     
-class UserData(UpdateData):
+class UserData(BaseModel):
+    id: int
+    email: EmailStr
+    
+class ProfileData(UpdateData):
     id: int
     email: EmailStr
     disabled: bool = False
     verified: bool = False
     is_mfa_enabled: bool = False
     
-class AdminData(UserData):
-    pass
-
 class DashboardData(BaseModel):
     total_users: int
     active_users: int
@@ -42,11 +43,13 @@ class VerifyEmailResponseSchema(BaseOfAllResponseSchemas):
     
 class SessionData(BaseModel):
     session_id: str
-    user_id: int
+    user_id: Optional[int]
     admin_id: Optional[int]
-    is_admin: Optional[bool]
+    is_admin: bool = False
     ip_address: str
-    device: Optional[str]
+    device: str
+    os: str
+    browser: str
     created_at: str
     expired_at: str
     

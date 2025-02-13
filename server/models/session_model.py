@@ -8,7 +8,9 @@ session = Table(
     Column('admin_id', Integer, nullable=True),
     Column('is_admin', Boolean, default=False),
     Column('ip_address', String(255), nullable=False),
-    Column('device', String(255), nullable=True),
+    Column('device', String(255), nullable=False),
+    Column('os', String(255), nullable=False),
+    Column('browser', String(255), nullable=False),
     Column('created_at', DateTime),
     Column('expired_at', DateTime)
 )

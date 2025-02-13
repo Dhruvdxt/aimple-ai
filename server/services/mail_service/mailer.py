@@ -3,6 +3,7 @@ from os import getenv
 from ...config.mailer_config import ses_client
 
 
+
 def send_mail(recipient: str, subject: dict, body: dict):
     """Send email using AWS SES"""
     try:
