@@ -55,8 +55,6 @@ async def check_login_attempts(email: str):
     lock_key = f"lockout:{email}"
     fail_key = f"login_attempts:{email}"
     
-    
-    
     is_locked = await redis.get(lock_key)
     
     

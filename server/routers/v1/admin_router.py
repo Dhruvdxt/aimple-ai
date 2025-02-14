@@ -60,30 +60,30 @@ async def get_activities(session_id: session_id_dependency):
 
 
 @router.put("/update_profile_data", response_model=AdminUpdateProfileDataResponseSchema)
-async def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: session_id_dependency):
-    return admin_ctrl.update_profile_data(req_body, session_id)
+async def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: session_id_dependency, request: Request):
+    return admin_ctrl.update_profile_data(req_body, session_id, request)
 
 
 @router.put("/update_profile_data/{user_id}", response_model=AdminUpdateProfileDataResponseSchema)
-async def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: session_id_dependency, user_id: int):
-    return admin_ctrl.update_profile_data(req_body, session_id, user_id)
+async def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: session_id_dependency, request: Request, user_id: int):
+    return admin_ctrl.update_profile_data(req_body, session_id, request, user_id)
 
 
 @router.put("/update_password", response_model=AdminUpdatePasswordResponseSchema)
-async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: session_id_dependency):
-    return admin_ctrl.update_password(req_body, session_id)
+async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: session_id_dependency, request: Request):
+    return admin_ctrl.update_password(req_body, session_id, request)
 
 
 @router.put("/update_password/{user_id}", response_model=AdminUpdatePasswordResponseSchema)
-async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: session_id_dependency, user_id: int):
-    return admin_ctrl.update_password(req_body, session_id, user_id)
+async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: session_id_dependency, request: Request, user_id: int):
+    return admin_ctrl.update_password(req_body, session_id, request, user_id)
 
 
 @router.put("/enable_or_disable", response_model=AdminEnableOrDisableResponseSchema)
-async def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: session_id_dependency):
-    return admin_ctrl.enable_or_disable(req_body, session_id)
+async def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: session_id_dependency, request: Request):
+    return admin_ctrl.enable_or_disable(req_body, session_id, request)
 
 
 @router.delete("/delete", response_model=AdminDeleteResponseSchema)
-async def delete(session_id: session_id_dependency):
-    return admin_ctrl.delete(session_id)
+async def delete(session_id: session_id_dependency, request: Request):
+    return admin_ctrl.delete(session_id, request)

@@ -1,14 +1,19 @@
 from sqlalchemy import Enum
 from typing import Optional
 from ..config.db_config import db
-from ..models.index import activity, ActivityType
+from ..models.index import activity
 
 
-def create_activity(activity_type: Enum, session_id: Optional[str] = None, user_id: Optional[int] = None):
+def create_activity(activity_type: Enum, public_ip_address: str, city: str, region: str, country: str, isp: str, session_id: Optional[str] = None, user_id: Optional[int] = None):
     data = {
         "session_id": session_id,
         "user_id": user_id,
-        "activity_type": activity_type
+        "activity_type": activity_type,
+        "public_ip_address": public_ip_address,
+        "city": city,
+        "region": region,
+        "country": country,
+        "isp": isp
     }
 
     data = {key: value for key, value in data.items() if value is not None}

@@ -22,5 +22,10 @@ activity = Table(
     Column('session_id', String(255), nullable=True),
     Column('user_id', Integer, nullable=True),
     Column('activity_type', Enum(ActivityType), nullable=False),
+    Column('public_ip_address', String(255), nullable=False),
+    Column('city', String(255), nullable=False),
+    Column('region', String(255), nullable=False),
+    Column('country', String(255), nullable=False),
+    Column('isp', String(255), nullable=False),
     Column('timestamp', DateTime, default=func.now())
 )

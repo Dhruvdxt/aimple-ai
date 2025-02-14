@@ -58,5 +58,10 @@ class ActivityData(BaseModel):
     session_id: Optional[str]
     user_id: Optional[int]
     activity_type: ActivityType
+    public_ip_address: str
+    city: str
+    region: str
+    country: str
+    isp: str
     timestamp: str
     

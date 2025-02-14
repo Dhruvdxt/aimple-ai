@@ -24,15 +24,18 @@ class UserGetActivitiesResponseSchema(BaseOfAllResponseSchemas):
 class UserSendVerifyEmailMailResponseSchema(BaseOfAllResponseSchemas):
     message: str = "verification_mail_has_been_sent_successfully"
     
+class UserSendResetPasswordMailResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "reset_password_mail_has_been_sent_successfully"
+    
 class UserEnableMFAResponseSchema(BaseOfAllResponseSchemas):
     message: str = "scan_qr_code_&_enter_otp"
     otp_uri: str
     
-class UserVerifyFirstOTPResponseSchema(BaseOfAllResponseSchemas):
-    message: str = "otp_verified_successfully"
-    
 class UserDisableMFAResponseSchema(BaseOfAllResponseSchemas):
     message: str = "mfa_disabled_successfully"
+    
+class UserVerifyFirstOTPResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "otp_verified_successfully"
     
 class UserUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_s_profile_updated_successfully"

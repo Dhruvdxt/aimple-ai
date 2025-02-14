@@ -6,6 +6,7 @@ import qrcode
 import user_agents
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
+from ...core.utils.network import get_ip_info
 from ...repositories.activity_repository import *
 from ...repositories.mfa_secret_repository import *
 from ...repositories.session_repository import *
@@ -13,22 +14,23 @@ from ...repositories.user_repository import *
 from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import *
-from ...services.mail_service.mail_types import verify_email, password_reset
+from ...services.mail_service.mail_types import verify_email, password_reset, reset_password
 
 
 
-def register(req_body: UserRegisterRequestSchema) -> UserRegisterResponseSchema:
+def register(req_body: UserRegisterRequestSchema, request: Request) -> UserRegisterResponseSchema:
     try:
         if get_user_by_email(req_body.email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="email_already_registered"
             )
-        
+            
         hashed_password = get_password_hash(req_body.password)
-        
+    
         user = create_user(req_body.email, hashed_password)
-        create_activity(user_id=user.id, activity_type=ActivityType.REGISTRATION)
+        ip_info = get_ip_info(request)
+        create_activity(user_id=user.id, activity_type=ActivityType.REGISTRATION, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         return UserRegisterResponseSchema(status_code=201)
     except Exception as e:
@@ -74,14 +76,15 @@ async def login(req_body: UserLoginRequestSchema, request: Request, response: Re
             samesite="Lax"
         )
         
-        create_activity(session_id=session.session_id, user_id=user.id, activity_type=ActivityType.LOGIN)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session.session_id, user_id=user.id, activity_type=ActivityType.LOGIN, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         return UserLoginResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def logout(session_id: str, response: Response) -> UserLogoutResponseSchema:
+def logout(session_id: str, request: Request, response: Response) -> UserLogoutResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         # if session_id:
@@ -89,17 +92,19 @@ def logout(session_id: str, response: Response) -> UserLogoutResponseSchema:
 
         response.delete_cookie(getenv('SESSION_COOKIE_NAME'))
         
-        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.LOGOUT)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.LOGOUT, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
 
         return UserLogoutResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def get_profile_data(session_id: str) -> UserGetProfileDataResponseSchema:
+def get_profile_data(session_id: str, request: Request) -> UserGetProfileDataResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         user = get_user_by_id(session.user_id)
+        
         return UserGetProfileDataResponseSchema(
             status_code=status.HTTP_200_OK,
             profile_data=ProfileData(
@@ -160,6 +165,11 @@ def get_activities(session_id: str) -> UserGetActivitiesResponseSchema:
                     session_id=a.session_id,
                     user_id=a.user_id,
                     activity_type=a.activity_type,
+                    public_ip_address=a.public_ip_address,
+                    city=a.city,
+                    region=a.region,
+                    country=a.country,
+                    isp=a.isp,
                     timestamp=a.timestamp.strftime("%B %d, %Y at %I:%M %p"),
                 )
                 for a in activities
@@ -181,6 +191,21 @@ def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSc
         verify_email.send_verify_email_mail(user.email, verification_link)
         
         return UserSendVerifyEmailMailResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    
+def send_reset_password_mail(email: EmailStr) -> UserSendResetPasswordMailResponseSchema:
+    try:
+        user = get_user_by_email(email)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user_does_not_exists")
+        
+        reset_password_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
+        reset_password_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/frontend-route-for-reset-password?token={reset_password_token}"
+        reset_password.send_reset_password_mail(user.email, reset_password_link)
+        
+        return UserSendResetPasswordMailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
  
@@ -219,7 +244,22 @@ def enable_mfa(session_id: str) -> UserEnableMFAResponseSchema:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
  
  
-def verify_first_otp(req_body: UserVerifyFirstOTPRequestSchema, session_id: str) -> UserVerifyFirstOTPResponseSchema:
+def disable_mfa(session_id: str, request: Request) -> UserDisableMFAResponseSchema:
+    try:
+        session = get_session_by_session_id(session_id)
+        
+        delete_mfa_secret_by_user_id(session.user_id)
+        update_user_profile_data_by_id(session.user_id, {'is_mfa_enabled': False})
+        
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.MFA_DISABLED, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
+        
+        return UserDisableMFAResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+ 
+def verify_first_otp(req_body: UserVerifyFirstOTPRequestSchema, session_id: str, request: Request) -> UserVerifyFirstOTPResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         mfa_secret = get_mfa_secret_by_user_id(session.user_id)
@@ -231,7 +271,8 @@ def verify_first_otp(req_body: UserVerifyFirstOTPRequestSchema, session_id: str)
         
         if totp.verify(req_body.otp):
             update_user_profile_data_by_id(session.user_id, {'is_mfa_enabled': True})
-            create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.MFA_ENABLED)
+            ip_info = get_ip_info(request)
+            create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.MFA_ENABLED, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
             return UserVerifyFirstOTPResponseSchema(status_code=status.HTTP_200_OK)
         
         raise HTTPException(status_code=400, detail="invalid_otp")
@@ -239,42 +280,36 @@ def verify_first_otp(req_body: UserVerifyFirstOTPRequestSchema, session_id: str)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
  
 
-def disable_mfa(session_id: str) -> UserDisableMFAResponseSchema:
-    try:
-        session = get_session_by_session_id(session_id)
-        
-        delete_mfa_secret_by_user_id(session.user_id)
-        update_user_profile_data_by_id(session.user_id, {'is_mfa_enabled': False})
-        
-        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.MFA_DISABLED)
-        
-        return UserDisableMFAResponseSchema(status_code=status.HTTP_200_OK)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-def update_profile_data(req_body: UserUpdateProfileDataRequestSchema, session_id: str) -> UserUpdateProfileDataResponseSchema:
+def update_profile_data(req_body: UserUpdateProfileDataRequestSchema, session_id: str, request: Request) -> UserUpdateProfileDataResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         update_data: dict = {k: v for k, v in req_body.update_data.model_dump().items() if v is not None}
         update_user_profile_data_by_id(session.user_id, update_data)
         
-        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.UPDATE_PROFILE)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.UPDATE_PROFILE, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         return UserUpdateProfileDataResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
      
      
-def update_password(req_body: UserUpdatePasswordRequestSchema, session_id: str) -> UserUpdatePasswordResponseSchema:
+def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request, token: Optional[str] = None, session_id: Optional[str] = None) -> UserUpdatePasswordResponseSchema:
     try:
-        session = get_session_by_session_id(session_id)
-        user = get_user_by_id(session.user_id)
-        if not verify_password(req_body.curr_password, user.hashed_password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="password_not_matched")
-        
+        if session_id:
+            session = get_session_by_session_id(session_id)
+            user_id = session.user_id
+            user = get_user_by_id(user_id)
+            if not verify_password(req_body.curr_password, user.hashed_password):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="password_not_matched")
+        elif token:
+            payload = decode_access_token(token)
+            user_id = payload.get('user_id')
+            
         hashed_password = get_password_hash(req_body.new_password)
-        update_user_password_by_id(session.user_id, {'hashed_password': hashed_password})
-        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.PASSWORD_RESET)
+        update_user_password_by_id(user_id, {'hashed_password': hashed_password})
+        
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=user_id, activity_type=ActivityType.PASSWORD_RESET, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         current_time = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         account_settings_url = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v1/account/settings"
@@ -285,13 +320,14 @@ def update_password(req_body: UserUpdatePasswordRequestSchema, session_id: str) 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def delete(session_id: str) -> UserDeleteResponseSchema:
+def delete(session_id: str, request: Request) -> UserDeleteResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         delete_user_by_id(session.user_id)
         delete_session_by_session_id(session.session_id)
         
-        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.ACCOUNT_DELETE)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=session.user_id, activity_type=ActivityType.ACCOUNT_DELETE, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         return UserDeleteResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:

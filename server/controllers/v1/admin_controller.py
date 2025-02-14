@@ -2,6 +2,7 @@ from fastapi import HTTPException, status, Request, Response
 import user_agents
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
+from ...core.utils.network import get_ip_info
 from ...repositories.activity_repository import *
 from ...repositories.admin_repository import *
 from ...repositories.session_repository import *
@@ -54,7 +55,8 @@ async def login(req_body: AdminLoginRequestSchema, request: Request, response: R
             samesite="Lax"
         )
         
-        create_activity(session_id=session.session_id, activity_type=ActivityType.LOGIN)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session.session_id, activity_type=ActivityType.LOGIN, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         return AdminLoginResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -70,7 +72,8 @@ def logout(request: Request, response: Response) -> AdminLogoutResponseSchema:
 
         response.delete_cookie(getenv('SESSION_COOKIE_NAME'))
         
-        create_activity(session_id=session_id, activity_type=ActivityType.LOGOUT)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, activity_type=ActivityType.LOGOUT, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
 
         return AdminLogoutResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -182,19 +185,20 @@ def get_activities() -> AdminGetActivitiesResponseSchema:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: str, user_id: Optional[int] = None) -> AdminUpdateProfileDataResponseSchema:
+def update_profile_data(req_body: AdminUpdateProfileDataRequestSchema, session_id: str, request: Request, user_id: Optional[int] = None) -> AdminUpdateProfileDataResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         update_data: dict = {k: v for k, v in req_body.update_data.model_dump().items() if v is not None}
         update_admin_profile_data_by_id(session.admin_id, update_data) if not user_id else update_user_profile_data_by_id(user_id, update_data)
         
-        create_activity(session_id=session_id, activity_type=ActivityType.UPDATE_PROFILE)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, activity_type=ActivityType.UPDATE_PROFILE, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         return AdminUpdateProfileDataResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
      
-def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: str, user_id: Optional[int] = None) -> AdminUpdatePasswordResponseSchema:
+def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: str, request: Request, user_id: Optional[int] = None) -> AdminUpdatePasswordResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         if not user_id:
@@ -205,14 +209,15 @@ def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: str,
         hashed_password = get_password_hash(req_body.new_password)
         update_admin_password_by_id(session.admin_id, {'hashed_password': hashed_password}) if not user_id else update_user_password_by_id(user_id, {'hashed_password': hashed_password})
         
-        create_activity(session_id=session_id, user_id=user_id, activity_type=ActivityType.PASSWORD_RESET)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=user_id, activity_type=ActivityType.PASSWORD_RESET, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
             
         return AdminUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     
-def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: str) -> AdminEnableOrDisableResponseSchema:
+def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: str, request: Request) -> AdminEnableOrDisableResponseSchema:
     try:
         user = get_user_by_id(req_body.user_id)
         
@@ -221,14 +226,15 @@ def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: s
         
         update_user_profile_data_by_id(req_body.user_id, {'disabled': not user.disabled})
         
-        create_activity(session_id=session_id, user_id=user.id, activity_type=ActivityType.ENABLE_OR_DISABLE)
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session_id, user_id=user.id, activity_type=ActivityType.ENABLE_OR_DISABLE, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         return AdminEnableOrDisableResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     
-def delete(session_id: str) -> AdminDeleteResponseSchema:
+def delete(session_id: str, request: Request) -> AdminDeleteResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         delete_admin_by_id(session.admin_id)

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status, Request
 from ...core.utils.auth import decode_access_token
+from ...models.activity_model import ActivityType
 from ...repositories.activity_repository import *
 from ...repositories.user_repository import *
 from ...schemas.base_schemas import VerifyEmailResponseSchema

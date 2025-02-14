@@ -17,6 +17,6 @@ class UserUpdateProfileDataRequestSchema(BaseModel):
     update_data: UpdateData
     
 class UserUpdatePasswordRequestSchema(BaseModel):
-    curr_password: str
+    curr_password: Optional[str] = None
     new_password: str
     
