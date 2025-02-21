@@ -14,7 +14,9 @@ from ...repositories.user_repository import *
 from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import *
-from ...services.mail_service.mail_types import verify_email, password_reset, reset_password
+from ...services.index import ServiceFactory, ServiceType, MailType, MProviderType, SProviderType
+# from ...services.mail_service import password_reset, reset_password
+# from ...services.mail_service import verify_email
 
 
 
@@ -188,7 +190,8 @@ def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSc
         
         verification_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         verification_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v2/verify_email?token={verification_token}"
-        verify_email.send_verify_email_mail(user.email, verification_link)
+        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.VERIFY_EMAIL).send(recipient=user.email, provider=MProviderType.SES, verification_link=verification_link)
+        # verify_email.send_verify_email_mail(user.email, verification_link)
         
         return UserSendVerifyEmailMailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -203,6 +206,7 @@ def send_reset_password_mail(email: EmailStr) -> UserSendResetPasswordMailRespon
         
         reset_password_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         reset_password_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/frontend-route-for-reset-password?token={reset_password_token}"
+        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.RESET_PASSWORD).send(recipient=user.email, provider=MProviderType.SES, reset_password_link=reset_password_link)
         reset_password.send_reset_password_mail(user.email, reset_password_link)
         
         return UserSendResetPasswordMailResponseSchema(status_code=status.HTTP_200_OK)
@@ -313,7 +317,8 @@ def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request,
         
         current_time = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         account_settings_url = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v1/account/settings"
-        password_reset.send_password_reset_mail(user.email, current_time, account_settings_url)
+        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.PASSWORD_RESET).send(recipient=user.email, provider=MProviderType.SES, current_time=current_time, account_settings_url=account_settings_url)
+        # password_reset.send_password_reset_mail(user.email, current_time, account_settings_url)
             
         return UserUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
