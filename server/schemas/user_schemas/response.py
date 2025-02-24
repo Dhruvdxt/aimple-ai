@@ -45,3 +45,9 @@ class UserUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):
     
 class UserDeleteResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_deleted_successfully"
+
+class UserSendVerifyPhoneOtpResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "verification_otp_has_been_sent_successfully"
+
+class UserEnteredPhoneOtpResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "verification_successfully"

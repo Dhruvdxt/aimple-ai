@@ -7,10 +7,11 @@ user = Table(
     Column('email', String(255)),
     Column('hashed_password', String(255)),
     Column('full_name', String(255), default="NA"),
-    Column('phone', String(255), default="NA"),
+    Column('phone', String(255), nullable=True),
     Column('address', String(255), default="NA"),
     Column('country', String(255), default="NA"),
     Column('disabled', Boolean, default=False),
     Column('verified', Boolean, default=False),
     Column('is_mfa_enabled', Boolean, default=False),
+    Column('is_phone_verified' , Boolean , default=False),
 )

@@ -87,3 +87,11 @@ async def update_password(req_body: UserUpdatePasswordRequestSchema, request: Re
 @router.delete("/delete", response_model=UserDeleteResponseSchema)
 async def delete(session_id: session_id_dependency, request: Request):
     return user_ctrl.delete(session_id, request)
+
+@router.post("/send_otp_for_phone_number", response_model=UserSendVerifyPhoneOtpResponseSchema)
+async def send_verify_otp(session_id: session_id_dependency , phonenumber :str):
+    return await user_ctrl.send_verify_otp(session_id , phonenumber)
+
+@router.post("/verify_phone_otp" , response_model=UserEnteredPhoneOtpResponseSchema)
+async def verify_otp(session_id : session_id_dependency , otp :str ):
+    return await user_ctrl.verify_otp(session_id , otp)

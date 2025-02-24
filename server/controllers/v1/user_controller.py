@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status, Request, Response
 from os import getenv
 import os
+import random
 import pyotp
 import qrcode
 import user_agents
@@ -15,7 +16,8 @@ from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import *
 from ...services.index import ServiceFactory, ServiceType, MailType, MProviderType, SProviderType
-# from ...services.mail_service import password_reset, reset_password
+from ...services.sms_service.sms_sender import SMSSender , ProviderType
+from ...services.mail_service import password_reset, reset_password
 # from ...services.mail_service import verify_email
 
 
@@ -337,3 +339,37 @@ def delete(session_id: str, request: Request) -> UserDeleteResponseSchema:
         return UserDeleteResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+async def send_verify_otp(session_id :str,phone_number: str) ->UserSendVerifyPhoneOtpResponseSchema:
+    session = get_session_by_session_id(session_id)
+    user = get_user_by_id(session.user_id)
+    if user.is_phone_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user_is_already_verified")
+    
+    otp = generate_otp()
+    print(otp)
+    message = f"Your OTP is: {otp}. Valid for 5 minutes."
+    SMSSender.send_sms(SMSSender ,ProviderType, phone_number, message)
+    otp_key = f"otp:{session_id}"
+    await redis.set(otp_key, otp +","+ phone_number, ex=300)
+    return UserSendVerifyPhoneOtpResponseSchema(status_code=status.HTTP_200_OK)
+
+
+# send_verify_phoneNumber_OTP()
+def generate_otp(length=6):
+    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
+
+async def verify_otp(session_id : str , otp : str)->UserEnteredPhoneOtpResponseSchema:
+   session = get_session_by_session_id(session_id)
+   otp_key = f"otp:{session_id}"
+   response  = str(await redis.get(otp_key))
+   res_otp = response.split(",")[0]
+   res_phone = response.split(",")[1] 
+
+   if res_otp == otp:
+      update_user_profile_data_by_id(session.user_id , {"phone":res_phone , "is_phone_verified":True})
+
+      return UserEnteredPhoneOtpResponseSchema(status_code=status.HTTP_200_OK)
+      
+   else:
+       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired or not found")
