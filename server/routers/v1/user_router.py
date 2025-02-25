@@ -76,12 +76,13 @@ async def update_profile_data(req_body: UserUpdateProfileDataRequestSchema, sess
 
 @router.put("/update_password", response_model=UserUpdatePasswordResponseSchema)
 async def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request, session_id: session_id_dependency):
-    return user_ctrl.update_password(req_body, request, session_id)
+    print(session_id)
+    return user_ctrl.update_password(req_body, request, session_id=session_id)
 
 
 @router.put("/update_password/{token}", response_model=UserUpdatePasswordResponseSchema)
 async def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request, token: str):
-    return user_ctrl.update_password(req_body, request, token)
+    return user_ctrl.update_password(req_body, request, token=token)
 
 
 @router.delete("/delete", response_model=UserDeleteResponseSchema)

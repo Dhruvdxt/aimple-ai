@@ -14,10 +14,12 @@ from ...repositories.user_repository import *
 from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import *
-from ...services.index import ServiceFactory, ServiceType, MailType, MProviderType, SProviderType
-# from ...services.mail_service import password_reset, reset_password
-# from ...services.mail_service import verify_email
-
+from ...services.mail_service.providers.aws_ses import AWSSES
+from ...services.mail_service.providers.index import Provider
+from ...services.mail_service.index import Mail
+from ...services.mail_service.password_reset import PasswordReset
+from ...services.mail_service.reset_password import ResetPassword
+from ...services.mail_service.verify_email import VerifyEmail
 
 
 def register(req_body: UserRegisterRequestSchema, request: Request) -> UserRegisterResponseSchema:
@@ -43,7 +45,9 @@ async def login(req_body: UserLoginRequestSchema, request: Request, response: Re
     try:
         await check_login_attempts(req_body.email)
         
+        
         user = await authenticate(req_body.email, req_body.password)
+        
         
         # if not user.verified:
         #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="verify_your_email_first")
@@ -57,7 +61,7 @@ async def login(req_body: UserLoginRequestSchema, request: Request, response: Re
             if not totp.verify(req_body.otp):
                 raise HTTPException(status_code=400, detail="invalid_otp")
         
-        await delete_record(user.id)
+        await delete_record(user.email)
         
         ip_address = request.client.host
         user_agent = user_agents.parse(request.headers.get('user-agent'))
@@ -190,8 +194,11 @@ def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSc
         
         verification_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         verification_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v2/verify_email?token={verification_token}"
-        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.VERIFY_EMAIL).send(recipient=user.email, provider=MProviderType.SES, verification_link=verification_link)
-        # verify_email.send_verify_email_mail(user.email, verification_link)
+        
+        aws_ses: Provider = AWSSES()
+        verify_email: Mail = VerifyEmail()
+        verify_email.send(recipient=user.email, provider=aws_ses, verification_link=verification_link)
+        # ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.VERIFY_EMAIL).send(recipient=user.email, provider=MProviderType.SES, verification_link=verification_link)
         
         return UserSendVerifyEmailMailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -206,8 +213,12 @@ def send_reset_password_mail(email: EmailStr) -> UserSendResetPasswordMailRespon
         
         reset_password_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         reset_password_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/frontend-route-for-reset-password?token={reset_password_token}"
-        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.RESET_PASSWORD).send(recipient=user.email, provider=MProviderType.SES, reset_password_link=reset_password_link)
-        reset_password.send_reset_password_mail(user.email, reset_password_link)
+        
+        aws_ses: Provider = AWSSES()
+        reset_password: Mail = ResetPassword()
+        print(reset_password_link)
+        reset_password.send(recipient=user.email, provider=aws_ses, reset_password_link=reset_password_link)
+        # ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.RESET_PASSWORD).send(recipient=user.email, provider=MProviderType.SES, reset_password_link=reset_password_link)
         
         return UserSendResetPasswordMailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -309,16 +320,21 @@ def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request,
             payload = decode_access_token(token)
             user_id = payload.get('user_id')
             
+            
         hashed_password = get_password_hash(req_body.new_password)
         update_user_password_by_id(user_id, {'hashed_password': hashed_password})
+        
         
         ip_info = get_ip_info(request)
         create_activity(session_id=session_id, user_id=user_id, activity_type=ActivityType.PASSWORD_RESET, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
         
         current_time = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         account_settings_url = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v1/account/settings"
-        ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.PASSWORD_RESET).send(recipient=user.email, provider=MProviderType.SES, current_time=current_time, account_settings_url=account_settings_url)
-        # password_reset.send_password_reset_mail(user.email, current_time, account_settings_url)
+        user = get_user_by_id(id=user_id)
+        
+        aws_ses: Provider = AWSSES()
+        password_reset: Mail = PasswordReset()
+        password_reset.send(recipient=user.email, provider=aws_ses, current_time=current_time, account_settings_url=account_settings_url)
             
         return UserUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:

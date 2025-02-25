@@ -1,26 +1,9 @@
 from enum import Enum
-from .mailer import Mailer, ProviderType
-from .password_reset import PasswordReset
-from .reset_password import ResetPassword
-from .verify_email import VerifyEmail
+from typing import Optional
+from abc import ABC, abstractmethod
+from .providers.index import Provider
 
-
-class MailType(str, Enum):
-    WELCOME = "WELCOME"
-    VERIFY_EMAIL = "VERIFY_EMAIL"
-    RESET_PASSWORD = "RESET_PASSWORD"
-    PASSWORD_RESET = "PASSWORD_RESET"
-    
-map: dict[str, any] = {
-    # "WELCOME": VerifyEmail(),
-    "VERIFY_EMAIL": VerifyEmail(),
-    "RESET_PASSWORD": ResetPassword(),
-    "PASSWORD_RESET": PasswordReset()
-}
-
-class MailService():
-    def get_mailer(self):
-        return Mailer()
-    
-    def get(self, mail_type: MailType):
-        return map[mail_type]
+class Mail(ABC):
+    @abstractmethod
+    def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
+        pass

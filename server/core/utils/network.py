@@ -10,7 +10,7 @@ def get_ip_info(request: Request):
         client_ip = request.client.host
 
         ip = forwarded_for.split(",")[0] if forwarded_for else real_ip or client_ip
-
+        
         if ip.startswith(("192.168.", "10.", "172.16.", "127.0.0.1")):
             ip = requests.get("https://api64.ipify.org?format=json").json()["ip"]
         
