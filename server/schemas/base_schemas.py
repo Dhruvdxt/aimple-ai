@@ -29,7 +29,7 @@ class ProfileData(UpdateData):
     disabled: bool = False
     verified: bool = False
     is_mfa_enabled: bool = False
-    is_phone_verified = False
+    is_phone_verified : bool = False
     
 class DashboardData(BaseModel):
     total_users: int

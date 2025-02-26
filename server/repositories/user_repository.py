@@ -22,6 +22,9 @@ def get_all_users():
 def get_user_by_email(email: str):
     return db.execute(user.select().where(user.c.email==email)).fetchone()
 
+def get_user_by_phone(phoneNumber :str):
+    return db.execute(user.select().where(user.c.phone==phoneNumber)).fetchone()
+
 
 def get_user_by_id(id: int):
     return db.execute(user.select().where(user.c.id==id)).fetchone()

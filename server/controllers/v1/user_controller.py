@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status, Request, Response
 from os import getenv
+import hashlib; 
 import os
 import random
 import pyotp
@@ -120,7 +121,8 @@ def get_profile_data(session_id: str, request: Request) -> UserGetProfileDataRes
                 country=user.country,
                 disabled=user.disabled,
                 verified=user.verified,
-                is_mfa_enabled=user.is_mfa_enabled
+                is_mfa_enabled=user.is_mfa_enabled,
+                is_phone_verified=user.is_phone_verified
             )
         )
     except Exception as e:
@@ -367,9 +369,76 @@ async def verify_otp(session_id : str , otp : str)->UserEnteredPhoneOtpResponseS
    res_phone = response.split(",")[1] 
 
    if res_otp == otp:
-      update_user_profile_data_by_id(session.user_id , {"phone":res_phone , "is_phone_verified":True})
+      update_user_profile_data_by_id(session.user_id , {'phone':res_phone , 'is_phone_verified':True})
 
       return UserEnteredPhoneOtpResponseSchema(status_code=status.HTTP_200_OK)
       
    else:
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired or not found")
+   
+
+async def login_with_phone_number(req_body: UserLoginWithPhone)->UserLoginOtpResponseSchema:
+    try:
+      user = get_user_by_phone(req_body.phoneNumber)
+      if not user:
+          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+      otp = generate_otp()
+      message = f"Your OTP is: {otp}. Valid for 5 minutes."
+      SMSSender.send_sms(SMSSender ,ProviderType, req_body.phoneNumber, message)
+    #   otp_token = str(uuid.uuid4())
+    #   otp_key = f"otp:{otp_token}"
+      otp_key = hashlib.sha256(otp.encode()).hexdigest()
+      await redis.set(otp_key, otp , ex=300)
+      return UserLoginOtpResponseSchema(status_code=status.HTTP_200_OK)
+        
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+async def login_otp_verify(req_body : userEntetredLoginOtp , request: Request, response: Response)->UserLoginResponseSchema:
+    try:
+        # await check_login_attempts(req_body.phone)
+
+        hashed_otp = hashlib.sha256(req_body.otp.encode()).hexdigest()
+        otp_to_be_find = await redis.get(hashed_otp)
+
+        if not otp_to_be_find:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired or not found")
+        
+        
+        if user.is_mfa_enabled:
+            if req_body.otp_mfa is None: 
+                raise HTTPException(status_code=400, detail="mfa_enabled_,_otp_required")
+            mfa_secret = get_mfa_secret_by_user_id(user.id)
+            totp = pyotp.TOTP(mfa_secret.secret)
+            
+            if not totp.verify(req_body.otp_mfa):
+                raise HTTPException(status_code=400, detail="invalid_otp")
+        
+        await delete_record(user.phone)
+        
+        ip_address = request.client.host
+        user_agent = user_agents.parse(request.headers.get('user-agent'))
+        
+        session = create_session(
+            user_id=user.id,
+            ip_address=ip_address,
+            device=user_agent.device.family,
+            os=user_agent.os.family,
+            browser=user_agent.browser.family
+        )
+        
+        response.set_cookie(
+            key=getenv('SESSION_COOKIE_NAME'),
+            value=session.session_id,
+            httponly=True,
+            secure=False,
+            samesite="Lax"
+        )
+        
+        ip_info = get_ip_info(request)
+        create_activity(session_id=session.session_id, user_id=user.id, activity_type=ActivityType.LOGIN, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
+        
+        return UserLoginResponseSchema(status_code=status.HTTP_200_OK)
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail=str(e))

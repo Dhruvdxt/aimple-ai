@@ -95,3 +95,12 @@ async def send_verify_otp(session_id: session_id_dependency , phonenumber :str):
 @router.post("/verify_phone_otp" , response_model=UserEnteredPhoneOtpResponseSchema)
 async def verify_otp(session_id : session_id_dependency , otp :str ):
     return await user_ctrl.verify_otp(session_id , otp)
+
+@router.post("/login_with_phone_number", response_model=UserPhoneLoginResponseSchema)
+@limiter.limit(f"{getenv('RATE_LIMIT')}/minute")
+async def login_with_phone_number(req_body : UserLoginWithPhone , request: Request, response: Response):
+    return await user_ctrl.login_with_phone_number(req_body , request , response)
+
+@router.post("/Login_phone_otp_verify" , response_model=UserLoginResponseSchema)
+async def login_otp_verify():
+    pass

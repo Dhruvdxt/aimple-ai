@@ -20,3 +20,9 @@ class UserUpdatePasswordRequestSchema(BaseModel):
     curr_password: Optional[str] = None
     new_password: str
     
+class UserLoginWithPhone(BaseModel):
+    phoneNumber : str
+
+class userEntetredLoginOtp(BaseModel):
+    otp: str
+    otp_mfa: Optional[int] = None
