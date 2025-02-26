@@ -51,3 +51,9 @@ class UserSendVerifyPhoneOtpResponseSchema(BaseOfAllResponseSchemas):
 
 class UserEnteredPhoneOtpResponseSchema(BaseOfAllResponseSchemas):
     message: str = "verification_successfully"
+
+class UserPhoneLoginResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "user_logged_in_successfully"
+
+class UserLoginOtpResponseSchema(BaseOfAllResponseSchemas):
+    message : str ="Login_otp_has_been_sent_successfully"

@@ -11,7 +11,6 @@ map: dict[str, any] = {
     "MAIL_SERVICE": MailService(),
     "SMS_SERVICE": SMSService()
 }
-    
 
 class ServiceFactory():
     def get(self, service_type: ServiceType):
