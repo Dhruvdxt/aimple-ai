@@ -377,18 +377,23 @@ async def verify_otp(session_id : str , otp : str)->UserEnteredPhoneOtpResponseS
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired or not found")
    
 
-async def login_with_phone_number(req_body: UserLoginWithPhone)->UserLoginOtpResponseSchema:
+async def login_with_phone_number(req_body: UserLoginWithPhone , request: Request, response: Response)->UserLoginOtpResponseSchema:
     try:
       user = get_user_by_phone(req_body.phoneNumber)
       if not user:
           raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
       otp = generate_otp()
+      print()
+      print()
+      print(otp)
+      print()
+      print()
       message = f"Your OTP is: {otp}. Valid for 5 minutes."
       SMSSender.send_sms(SMSSender ,ProviderType, req_body.phoneNumber, message)
     #   otp_token = str(uuid.uuid4())
     #   otp_key = f"otp:{otp_token}"
       otp_key = hashlib.sha256(otp.encode()).hexdigest()
-      await redis.set(otp_key, otp , ex=300)
+      await redis.set(otp_key, otp +","+ req_body.phoneNumber , ex=300)
       return UserLoginOtpResponseSchema(status_code=status.HTTP_200_OK)
         
     except Exception as e:
@@ -397,12 +402,15 @@ async def login_with_phone_number(req_body: UserLoginWithPhone)->UserLoginOtpRes
 async def login_otp_verify(req_body : userEntetredLoginOtp , request: Request, response: Response)->UserLoginResponseSchema:
     try:
         # await check_login_attempts(req_body.phone)
-
         hashed_otp = hashlib.sha256(req_body.otp.encode()).hexdigest()
-        otp_to_be_find = await redis.get(hashed_otp)
+        otp_to_be_find = str(await redis.get(hashed_otp))
 
         if not otp_to_be_find:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired or not found")
+        
+        res_phone = otp_to_be_find.split(",")[1]
+        
+        user = get_user_by_phone(res_phone)
         
         
         if user.is_mfa_enabled:

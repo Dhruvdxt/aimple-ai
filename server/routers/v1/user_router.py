@@ -88,7 +88,7 @@ async def update_password(req_body: UserUpdatePasswordRequestSchema, request: Re
 async def delete(session_id: session_id_dependency, request: Request):
     return user_ctrl.delete(session_id, request)
 
-@router.post("/send_otp_for_phone_number", response_model=UserSendVerifyPhoneOtpResponseSchema)
+@router.post("/verify_phone_number", response_model=UserSendVerifyPhoneOtpResponseSchema)
 async def send_verify_otp(session_id: session_id_dependency , phonenumber :str):
     return await user_ctrl.send_verify_otp(session_id , phonenumber)
 
@@ -99,8 +99,8 @@ async def verify_otp(session_id : session_id_dependency , otp :str ):
 @router.post("/login_with_phone_number", response_model=UserPhoneLoginResponseSchema)
 @limiter.limit(f"{getenv('RATE_LIMIT')}/minute")
 async def login_with_phone_number(req_body : UserLoginWithPhone , request: Request, response: Response):
-    return await user_ctrl.login_with_phone_number(req_body , request , response)
+    return await user_ctrl.login_with_phone_number(req_body ,request, response)
 
 @router.post("/Login_phone_otp_verify" , response_model=UserLoginResponseSchema)
-async def login_otp_verify():
-    pass
+async def login_otp_verify(req_body : userEntetredLoginOtp , request: Request, response: Response ):
+    return await user_ctrl.login_otp_verify(req_body , request , response)
