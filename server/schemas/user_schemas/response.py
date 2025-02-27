@@ -37,6 +37,12 @@ class UserDisableMFAResponseSchema(BaseOfAllResponseSchemas):
 class UserVerifyFirstOTPResponseSchema(BaseOfAllResponseSchemas):
     message: str = "otp_verified_successfully"
     
+class UserSendOtpResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "otp_has_been_sent_successfully"
+    
+class UserVerifyOtpResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "otp_verified"
+    
 class UserUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_s_profile_updated_successfully"
     

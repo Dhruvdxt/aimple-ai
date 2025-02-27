@@ -4,6 +4,7 @@ import os
 import pyotp
 import qrcode
 import user_agents
+import random
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
 from ...core.utils.network import get_ip_info
@@ -15,11 +16,15 @@ from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import *
 from ...services.mail_service.providers.aws_ses import AWSSES
-from ...services.mail_service.providers.index import Provider
+from ...services.mail_service.providers.index import Provider as MProvider
 from ...services.mail_service.index import Mail
 from ...services.mail_service.password_reset import PasswordReset
 from ...services.mail_service.reset_password import ResetPassword
 from ...services.mail_service.verify_email import VerifyEmail
+from ...services.sms_service.providers.aws_sns import AWSSNS
+from ...services.sms_service.providers.index import Provider as SProvider
+from ...services.sms_service.index import SMS
+from ...services.sms_service.otp import OTP
 
 
 def register(req_body: UserRegisterRequestSchema, request: Request) -> UserRegisterResponseSchema:
@@ -43,25 +48,27 @@ def register(req_body: UserRegisterRequestSchema, request: Request) -> UserRegis
 
 async def login(req_body: UserLoginRequestSchema, request: Request, response: Response) -> UserLoginResponseSchema:
     try:
-        await check_login_attempts(req_body.email)
-        
-        
-        user = await authenticate(req_body.email, req_body.password)
-        
+        await check_login_attempts(req_body.email if req_body.email else req_body.phone_number)
+        if req_body.email:
+            user = await authenticate(req_body.email, req_body.password)
+        else :
+            await verify(phone_number=req_body.phone_number, otp=req_body.phone_otp)
+            user = get_user_by_phone_number(phone_number=req_body.phone_number)
         
         # if not user.verified:
         #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="verify_your_email_first")
         
         if user.is_mfa_enabled:
-            if req_body.otp is None: 
+            if req_body.mfa_otp is None:
                 raise HTTPException(status_code=400, detail="mfa_enabled_,_otp_required")
             mfa_secret = get_mfa_secret_by_user_id(user.id)
             totp = pyotp.TOTP(mfa_secret.secret)
             
             if not totp.verify(req_body.otp):
                 raise HTTPException(status_code=400, detail="invalid_otp")
+            
         
-        await delete_record(user.email)
+        await delete_record(user.email if req_body.email else req_body.phone_number)
         
         ip_address = request.client.host
         user_agent = user_agents.parse(request.headers.get('user-agent'))
@@ -117,12 +124,13 @@ def get_profile_data(session_id: str, request: Request) -> UserGetProfileDataRes
                 id=user.id,
                 email=user.email,
                 full_name=user.full_name,
-                phone=user.phone, 
+                phone=user.phone,
                 address=user.address,
                 country=user.country,
                 disabled=user.disabled,
                 verified=user.verified,
-                is_mfa_enabled=user.is_mfa_enabled
+                is_mfa_enabled=user.is_mfa_enabled,
+                is_phone_verified=user.is_phone_verified
             )
         )
     except Exception as e:
@@ -195,7 +203,7 @@ def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSc
         verification_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         verification_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v2/verify_email?token={verification_token}"
         
-        aws_ses: Provider = AWSSES()
+        aws_ses: MProvider = AWSSES()
         verify_email: Mail = VerifyEmail()
         verify_email.send(recipient=user.email, provider=aws_ses, verification_link=verification_link)
         # ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.VERIFY_EMAIL).send(recipient=user.email, provider=MProviderType.SES, verification_link=verification_link)
@@ -214,7 +222,7 @@ def send_reset_password_mail(email: EmailStr) -> UserSendResetPasswordMailRespon
         reset_password_token = gen_access_token({'user_id': user.id}, timedelta(minutes=5))
         reset_password_link = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/frontend-route-for-reset-password?token={reset_password_token}"
         
-        aws_ses: Provider = AWSSES()
+        aws_ses: MProvider = AWSSES()
         reset_password: Mail = ResetPassword()
         print(reset_password_link)
         reset_password.send(recipient=user.email, provider=aws_ses, reset_password_link=reset_password_link)
@@ -293,6 +301,35 @@ def verify_first_otp(req_body: UserVerifyFirstOTPRequestSchema, session_id: str,
         raise HTTPException(status_code=400, detail="invalid_otp")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    
+async def send_otp(req_body: UserSendOtpRequestSchema, req: Request) -> UserSendVerifyEmailMailResponseSchema:
+    try:
+        otp: int = random.randint(1000, 9999)
+        # aws_sns: SProvider = AWSSNS()
+        # otp_sms: SMS = OTP()
+        # otp_sms.send(phone_number=req_body.phone_number, provider=aws_sns, otp=otp)
+        
+        otp_key = f"otp_for_{req_body.phone_number}_is:"
+        await redis.set(otp_key, otp, ex=getenv('OTP_VALIDATION_TIME'))
+        
+        print(f"otp for {req_body.phone_number} is: {otp}")
+        
+        return UserSendOtpResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    
+async def verify_otp(req_body: UserVerifyOtpRequestSchema, session_id: str, req: Request) -> UserSendVerifyEmailMailResponseSchema:
+    try:
+        session = get_session_by_session_id(session_id)
+        
+        if await verify(phone_number=req_body.phone_number, otp=req_body.otp):
+            update_user_profile_data_by_id(session.user_id, {'phone': req_body.phone_number, 'is_phone_verified': True})
+            
+        return UserVerifyOtpResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
  
 
 def update_profile_data(req_body: UserUpdateProfileDataRequestSchema, session_id: str, request: Request) -> UserUpdateProfileDataResponseSchema:
@@ -332,7 +369,7 @@ def update_password(req_body: UserUpdatePasswordRequestSchema, request: Request,
         account_settings_url = f"http://{getenv('DOMAIN')}:{getenv('PORT')}/api/v1/account/settings"
         user = get_user_by_id(id=user_id)
         
-        aws_ses: Provider = AWSSES()
+        aws_ses: MProvider = AWSSES()
         password_reset: Mail = PasswordReset()
         password_reset.send(recipient=user.email, provider=aws_ses, current_time=current_time, account_settings_url=account_settings_url)
             

@@ -15,14 +15,14 @@ async def authenticate(email: str, password: str, is_admin: Optional[bool] = Fal
     try:
         entity = get_user_by_email(email) if not is_admin else get_admin_by_email(email)
         if entity is None:
-            await record_failed_attempt(email)
+            await record_failed_attempt(email_or_phone=email)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="email_not_registered"
             )
             
         if not verify_password(password, entity.hashed_password):
-            await record_failed_attempt(email)
+            await record_failed_attempt(email_or_phone=email)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="incorrect_email_or_password",
@@ -31,7 +31,26 @@ async def authenticate(email: str, password: str, is_admin: Optional[bool] = Fal
         return entity
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
+
+
+async def verify(phone_number: str, otp: int) -> bool:
+    try:
+        otp_key = f"otp_for_{phone_number}_is:"
+        our_otp = await redis.get(otp_key)
+
+        if not our_otp:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="otp_expired")
+
+        user_otp = str(otp)
+
+        if our_otp != user_otp:
+            await record_failed_attempt(email_or_phone=phone_number)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="incorrect_otp")
+        
+        return True
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 def get_session_id(request: Request):
     try:
@@ -51,9 +70,9 @@ def get_session_id(request: Request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-async def check_login_attempts(email: str):
-    lock_key = f"lockout:{email}"
-    fail_key = f"login_attempts:{email}"
+async def check_login_attempts(email_or_phone: str):
+    lock_key = f"lockout:{email_or_phone}"
+    fail_key = f"login_attempts:{email_or_phone}"
     
     is_locked = await redis.get(lock_key)
     
@@ -78,8 +97,8 @@ async def check_login_attempts(email: str):
     
 
 
-async def record_failed_attempt(email: str):
-    fail_key = f"login_attempts:{email}"
+async def record_failed_attempt(email_or_phone: str):
+    fail_key = f"login_attempts:{email_or_phone}"
     
     failed_attempts = await redis.get(fail_key)
     if failed_attempts:
@@ -88,8 +107,8 @@ async def record_failed_attempt(email: str):
         await redis.set(fail_key, 1, ex=getenv('ATTEMPT_RESET_TIME'))
 
 
-async def delete_record(email: str):
-    key = f"login_attempts:{email}"
+async def delete_record(email_or_phone: str):
+    key = f"login_attempts:{email_or_phone}"
     if await redis.exists(key):
         await redis.delete(key)
 
@@ -113,33 +132,3 @@ def decode_access_token(token: str) -> dict:
         return jwt.decode(token, getenv('SECRET_KEY'), algorithms=[getenv('ALGORITHM')])
     except JWTError:
         raise cred_exp
-        
-    
-# def decode_user_token(
-#     security_scopes: SecurityScopes = SecurityScopes(),
-#     token: str = Depends(user_oauth2_scheme),
-# ) -> TokenData:
-#     try:
-#         payload = decode_access_token(token)
-#         user_id = payload.get('user_id')
-        
-#         if user_id is None:
-#             raise cred_exp
-#         return TokenData(user_id=int(user_id))
-#     except JWTError:
-#         raise cred_exp
- 
-   
-# def decode_admin_token(
-#     security_scopes: SecurityScopes = SecurityScopes(),
-#     token: str = Depends(admin_oauth2_scheme),
-# ) -> TokenData:
-#     try:
-#         payload = decode_access_token(token)
-#         admin_id = payload.get('admin_id')
-        
-#         if admin_id is None:
-#             raise cred_exp
-#         return TokenData(admin_id=int(admin_id))
-#     except JWTError:
-#         raise cred_exp

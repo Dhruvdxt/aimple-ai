@@ -15,7 +15,6 @@ class TokenData(BaseModel):
     
 class UpdateData(BaseModel):
     full_name: Optional[str] = None
-    phone: Optional[str] = None
     address: Optional[str] = None
     country: Optional[str] = None
     
@@ -26,9 +25,11 @@ class UserData(BaseModel):
 class ProfileData(UpdateData):
     id: int
     email: EmailStr
+    phone: Optional[str] = None
     disabled: bool = False
     verified: bool = False
     is_mfa_enabled: bool = False
+    is_phone_verified: bool = False
     
 class DashboardData(BaseModel):
     total_users: int

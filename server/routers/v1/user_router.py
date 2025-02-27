@@ -69,6 +69,16 @@ async def enable_mfa(req_body: UserVerifyFirstOTPRequestSchema, session_id: sess
     return user_ctrl.verify_first_otp(req_body, session_id, request)
 
 
+@router.post("/send_otp", response_model=UserSendOtpResponseSchema)
+async def send_otp(req_body: UserSendOtpRequestSchema, request: Request):
+    return await user_ctrl.send_otp(req_body, request)
+
+
+@router.post("/verify_otp", response_model=UserVerifyOtpResponseSchema)
+async def verify_otp(req_body: UserVerifyOtpRequestSchema, session_id: session_id_dependency, request: Request):
+    return await user_ctrl.verify_otp(req_body, session_id, request)
+
+
 @router.put("/update_profile_data", response_model=UserUpdateProfileDataResponseSchema)
 async def update_profile_data(req_body: UserUpdateProfileDataRequestSchema, session_id: session_id_dependency, request: Request):
     return user_ctrl.update_profile_data(req_body, session_id, request)

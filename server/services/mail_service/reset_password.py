@@ -19,18 +19,3 @@ class ResetPassword(Mail):
         body = ResetPassword.__get_reset_password_mail_body(self, reset_password_link)
         
         provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})
-
-
-# def get_reset_password_mail_body(reset_password_link: str):
-#     with open(TEMPLATE_PATH, "r", encoding="utf-8") as file:
-#         template = file.read()
-#     return template.replace("{{reset_password_link}}", reset_password_link)
-
-
-# def send_reset_password_mail(recipient: str, reset_password_link: str):
-#     subject = "Action Required: Reset Your Aimple AI Password"
-#     body = get_reset_password_mail_body(reset_password_link)
-    
-#     send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})
-#     return
-    

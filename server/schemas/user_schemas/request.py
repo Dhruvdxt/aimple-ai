@@ -7,10 +7,20 @@ class UserRegisterRequestSchema(BaseModel):
     email: EmailStr
     password: str
 
-class UserLoginRequestSchema(UserRegisterRequestSchema):
-    otp: Optional[int] = None
+class UserLoginRequestSchema(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    phone_number: Optional[str] = None
+    phone_otp: Optional[int] = None
+    mfa_otp: Optional[int] = None
     
 class UserVerifyFirstOTPRequestSchema(BaseModel):
+    otp: int
+    
+class UserSendOtpRequestSchema(BaseModel):
+    phone_number: str
+    
+class UserVerifyOtpRequestSchema(UserSendOtpRequestSchema):
     otp: int
     
 class UserUpdateProfileDataRequestSchema(BaseModel):

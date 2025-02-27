@@ -27,6 +27,10 @@ def get_user_by_id(id: int):
     return db.execute(user.select().where(user.c.id==id)).fetchone()
 
 
+def get_user_by_phone_number(phone_number: str):
+    return db.execute(user.select().where(user.c.phone==phone_number)).fetchone()
+
+
 def get_user_data():
     total_users_count = func.count(user.c.id).label("total_users")
     active_users_count = func.sum(case((user.c.disabled == False, 1), else_=0)).label("active_users")

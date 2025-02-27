@@ -1,21 +1,8 @@
-from enum import Enum
-from .sms_sender import SMSSender, ProviderType
-# from .otp import OTP
-# from .transection import TRANSECTION
+from typing import Optional
+from abc import ABC, abstractmethod
+from .providers.index import Provider
 
-
-class SMSType(str, Enum):
-    OTP = "OTP"
-    TRANSECTION = "TRANSECTION"
-    
-map: dict[str, any] = {
-    # "OTP": OTP(),
-    # "TRANSECTION": TRANSECTION()
-}
-
-class SMSService():
-    def get_sms_sender(self):
-        return SMSSender()
-    
-    def get(self, sms_type: SMSType):
-        return map[sms_type]
+class SMS(ABC):
+    @abstractmethod
+    def send(self, phone_number: str, provider: Provider, otp: int):
+        pass
