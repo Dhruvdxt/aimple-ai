@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from os import getenv
 import uuid
 from ..config.db_config import db
+from ..core.utils.settings import Settings
 from ..models.index import session
 
 def create_session(ip_address: str, device: str, os: str, browser: str, user_id: Optional[int] = None, admin_id: Optional[int] = None, is_admin: bool = False):
@@ -18,7 +19,7 @@ def create_session(ip_address: str, device: str, os: str, browser: str, user_id:
         os=os,
         browser=browser,
         created_at=datetime.now(),
-        expired_at=datetime.now() + timedelta(minutes=int(getenv('SESSION_EXPIRE_MINUTES')))
+        expired_at=datetime.now() + timedelta(minutes=Settings.SESSION_EXPIRE_MINUTES)
     ))
     db.commit()
     

@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from ...config.db_config import redis
 from .errors import cred_exp
 from .hashing import verify_password
+from .settings import Settings
 from ...repositories.admin_repository import get_admin_by_email
 from ...repositories.session_repository import *
 from ...repositories.user_repository import get_user_by_email
@@ -15,7 +16,7 @@ async def authenticate(email: str, password: str, is_admin: Optional[bool] = Fal
     try:
         entity = get_user_by_email(email) if not is_admin else get_admin_by_email(email)
         if entity is None:
-            await record_failed_attempt(email_or_phone=email)
+            # await record_failed_attempt(email_or_phone=email)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="email_not_registered"
@@ -76,26 +77,22 @@ async def check_login_attempts(email_or_phone: str):
     
     is_locked = await redis.get(lock_key)
     
-    
     if is_locked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="your_account_is_locked_due_to_multiple_failed_login_attempts.try_again_later."
         )
-    
         
     failed_attempts = await redis.get(fail_key)
-
     
-    if failed_attempts and int(failed_attempts) >= int(getenv('FAILED_ATTEMPT_LIMIT')):
-        await redis.set(lock_key, "LOCKED", ex=int(getenv('BLOCK_DURATION')))
+    if failed_attempts and int(failed_attempts) >= Settings.FAILED_ATTEMPT_LIMIT:
+        await redis.set(lock_key, "LOCKED", ex=Settings.BLOCK_DURATION)
         await redis.delete(fail_key)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="too_many_failed_attempts.your_account_is_locked_for_2_hours."
         )
     
-
 
 async def record_failed_attempt(email_or_phone: str):
     fail_key = f"login_attempts:{email_or_phone}"
@@ -104,7 +101,7 @@ async def record_failed_attempt(email_or_phone: str):
     if failed_attempts:
         await redis.incr(fail_key)
     else:
-        await redis.set(fail_key, 1, ex=getenv('ATTEMPT_RESET_TIME'))
+        await redis.set(fail_key, 1, ex=Settings.ATTEMPT_RESET_TIME)
 
 
 async def delete_record(email_or_phone: str):
@@ -119,7 +116,7 @@ def gen_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> s
         if expires_delta:
             expire = datetime.now() + expires_delta
         else:
-            expire = datetime.now() + timedelta(minutes=int(getenv('ACCESS_TOKEN_EXPIRE_MINUTES')))
+            expire = datetime.now() + timedelta(minutes=Settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, getenv('SECRET_KEY'), algorithm=getenv('ALGORITHM'))
         return encoded_jwt

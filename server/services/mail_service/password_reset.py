@@ -15,8 +15,8 @@ class PasswordReset(Mail):
             
         return template.replace("{{current_time}}", current_time).replace("{{account_settings_url}}", account_settings_url)
 
-    def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
+    async def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
         subject = "Security Alert: Password Modified"
         body = PasswordReset.__get_password_reset_mail_body(self, current_time, account_settings_url)
         
-        provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})
+        await provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})

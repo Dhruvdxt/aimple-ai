@@ -66,3 +66,12 @@ class ActivityData(BaseModel):
     isp: str
     timestamp: str
     
+class Settings(BaseModel):
+    SESSION_EXPIRE_MINUTES: Optional[int] = None
+    OTP_VALIDATION_TIME: Optional[int] = None
+    LOGIN_RATE_LIMIT: Optional[str] = None
+    FAILED_ATTEMPT_LIMIT: Optional[int] = None
+    BLOCK_DURATION: Optional[int] = None
+    ATTEMPT_RESET_TIME: Optional[int] = None
+    ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int] = None
+    

@@ -14,8 +14,8 @@ class VerifyEmail(Mail):
             template = file.read()
         return template.replace("{{verification_link}}", verification_link)
     
-    def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
+    async def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
         subject = "Action Required: Verify Your Email for Aimple AI"
         body = VerifyEmail.__get_verify_email_mail_body(self, verification_link)
         
-        provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})
+        await provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})

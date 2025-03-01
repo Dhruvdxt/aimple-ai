@@ -46,17 +46,22 @@ async def get_profile_data(session_id: session_id_dependency, user_id: int):
 
 @router.get("/get_dashboard_data", response_model=AdminGetDashboardDataResponseSchema)
 async def get_dashboard_data(session_id: session_id_dependency):
-    return admin_ctrl.get_dashboard_data()
+    return admin_ctrl.get_dashboard_data(session_id)
 
 
 @router.get("/get_sessions", response_model=AdminGetSessionsResponseSchema)
 async def get_sessions(session_id: session_id_dependency):
-    return admin_ctrl.get_sessions()
+    return admin_ctrl.get_sessions(session_id)
 
 
 @router.get("/get_activities", response_model=AdminGetActivitiesResponseSchema)
 async def get_activities(session_id: session_id_dependency):
-    return admin_ctrl.get_activities()
+    return admin_ctrl.get_activities(session_id)
+
+
+@router.get("/get_settings", response_model=AdminGetSettingsResponseSchema)
+async def get_settings(session_id: session_id_dependency):
+    return admin_ctrl.get_settings(session_id)
 
 
 @router.put("/update_profile_data", response_model=AdminUpdateProfileDataResponseSchema)
@@ -77,6 +82,11 @@ async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id
 @router.put("/update_password/{user_id}", response_model=AdminUpdatePasswordResponseSchema)
 async def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: session_id_dependency, request: Request, user_id: int):
     return admin_ctrl.update_password(req_body, session_id, request, user_id)
+
+
+@router.put("/update_settings", response_model=AdminUpdateSettingsResponseSchema)
+async def update_settings(req_body: AdminUpdateSettingsRequestSchema, session_id: session_id_dependency):
+    return admin_ctrl.update_settings(req_body, session_id)
 
 
 @router.put("/enable_or_disable", response_model=AdminEnableOrDisableResponseSchema)

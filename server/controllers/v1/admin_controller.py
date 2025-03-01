@@ -3,13 +3,15 @@ import user_agents
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
 from ...core.utils.network import get_ip_info
+from ...core.utils.settings import Settings as _Settings
 from ...repositories.activity_repository import *
 from ...repositories.admin_repository import *
 from ...repositories.session_repository import *
 from ...repositories.user_repository import *
+from ...repositories import settings_repository
 from ...schemas.admin_schemas.request import *
 from ...schemas.admin_schemas.response import *
-from ...schemas.base_schemas import *
+from ...schemas.base_schemas import Settings as SettingsSchema
 
 
 
@@ -118,8 +120,12 @@ def get_profile_data(session_id: str, user_id: Optional[int] = None) -> AdminGet
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     
-def get_dashboard_data() -> AdminGetDashboardDataResponseSchema:
+def get_dashboard_data(session_id: str) -> AdminGetDashboardDataResponseSchema:
     try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+        
         users_data = get_user_data()
         admins_data = get_admin_data()
         
@@ -138,8 +144,12 @@ def get_dashboard_data() -> AdminGetDashboardDataResponseSchema:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 
-def get_sessions() -> AdminGetSessionsResponseSchema:
+def get_sessions(session_id: str) -> AdminGetSessionsResponseSchema:
     try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+        
         sessions = get_all_sessions()
         
         return AdminGetSessionsResponseSchema(
@@ -164,8 +174,12 @@ def get_sessions() -> AdminGetSessionsResponseSchema:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def get_activities() -> AdminGetActivitiesResponseSchema:
+def get_activities(session_id: str) -> AdminGetActivitiesResponseSchema:
     try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+        
         activities = get_all_activities()
         
         return AdminGetActivitiesResponseSchema(
@@ -180,6 +194,28 @@ def get_activities() -> AdminGetActivitiesResponseSchema:
                 )
                 for a in activities
             ]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    
+def get_settings(session_id: str) -> AdminGetSettingsResponseSchema:
+    try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+            
+        return AdminGetSettingsResponseSchema(
+            status_code=status.HTTP_200_OK,
+            settings=SettingsSchema(
+                SESSION_EXPIRE_MINUTES=_Settings.SESSION_EXPIRE_MINUTES,
+                OTP_VALIDATION_TIME=_Settings.OTP_VALIDATION_TIME,
+                LOGIN_RATE_LIMIT=_Settings.LOGIN_RATE_LIMIT,
+                FAILED_ATTEMPT_LIMIT=_Settings.FAILED_ATTEMPT_LIMIT,
+                BLOCK_DURATION=_Settings.BLOCK_DURATION,
+                ATTEMPT_RESET_TIME=_Settings.ATTEMPT_RESET_TIME,
+                ACCESS_TOKEN_EXPIRE_MINUTES=_Settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -215,10 +251,31 @@ def update_password(req_body: AdminUpdatePasswordRequestSchema, session_id: str,
         return AdminUpdatePasswordResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
+
+
+def update_settings(req_body: AdminUpdateSettingsRequestSchema, session_id: str) -> AdminUpdateSettingsResponseSchema:
+    try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+        
+        update_data: dict = {k: v for k, v in req_body.update_data.model_dump().items() if v is not None}
+        settings_repository.update_settings(update_data)
+        _Settings.get_from_db()
+        
+        # ip_info = get_ip_info(request)
+        # create_activity(session_id=session_id, activity_type=ActivityType.UPDATE_PROFILE, public_ip_address=ip_info.get('ip'), city=ip_info.get('city'), region=ip_info.get('region'), country=ip_info.get('country'), isp=ip_info.get('org'))
+        return AdminUpdateSettingsResponseSchema(status_code=status.HTTP_200_OK)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+ 
     
 def enable_or_disable(req_body: AdminEnableOrDisableRequestSchema, session_id: str, request: Request) -> AdminEnableOrDisableResponseSchema:
     try:
+        session = get_session_by_session_id(session_id)
+        if not session.is_admin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="only_admin_is_allowed_to_access_this_route")
+        
         user = get_user_by_id(req_body.user_id)
         
         if user is None:

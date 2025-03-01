@@ -26,11 +26,17 @@ class AdminGetSessionsResponseSchema(UserGetSessionsResponseSchema):
 class AdminGetActivitiesResponseSchema(UserGetActivitiesResponseSchema):
     pass
 
+class AdminGetSettingsResponseSchema(BaseOfAllResponseSchemas):
+    settings: Settings
+
 class AdminUpdateProfileDataResponseSchema(BaseOfAllResponseSchemas):
     message: str = "profile_updated_successfully"
     
 class AdminUpdatePasswordResponseSchema(BaseOfAllResponseSchemas):
     message: str = "password_updated_successfully"
+    
+class AdminUpdateSettingsResponseSchema(BaseOfAllResponseSchemas):
+    message: str = "settings_updated_successfully"
     
 class AdminEnableOrDisableResponseSchema(BaseOfAllResponseSchemas):
     message: str = "user_enabled_or_disabled_successfully"

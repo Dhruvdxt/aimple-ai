@@ -8,6 +8,7 @@ import random
 from ...core.utils.auth import *
 from ...core.utils.hashing import get_password_hash, verify_password
 from ...core.utils.network import get_ip_info
+from ...core.utils.settings import Settings as _Settings
 from ...repositories.activity_repository import *
 from ...repositories.mfa_secret_repository import *
 from ...repositories.session_repository import *
@@ -23,6 +24,8 @@ from ...services.mail_service.reset_password import ResetPassword
 from ...services.mail_service.verify_email import VerifyEmail
 from ...services.sms_service.providers.aws_sns import AWSSNS
 from ...services.sms_service.providers.index import Provider as SProvider
+from ...services.sms_service.providers.msg91 import MSG91
+from ...services.sms_service.providers.twilio import Twilio
 from ...services.sms_service.index import SMS
 from ...services.sms_service.otp import OTP
 
@@ -57,7 +60,6 @@ async def login(req_body: UserLoginRequestSchema, request: Request, response: Re
         
         # if not user.verified:
         #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="verify_your_email_first")
-        
         if user.is_mfa_enabled:
             if req_body.mfa_otp is None:
                 raise HTTPException(status_code=400, detail="mfa_enabled_,_otp_required")
@@ -193,7 +195,7 @@ def get_activities(session_id: str) -> UserGetActivitiesResponseSchema:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSchema:
+async def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         user = get_user_by_id(session.user_id)
@@ -205,8 +207,7 @@ def send_verify_email_mail(session_id: str) -> UserSendVerifyEmailMailResponseSc
         
         aws_ses: MProvider = AWSSES()
         verify_email: Mail = VerifyEmail()
-        verify_email.send(recipient=user.email, provider=aws_ses, verification_link=verification_link)
-        # ServiceFactory().get(service_type=ServiceType.MAIL_SERVICE).get(mail_type=MailType.VERIFY_EMAIL).send(recipient=user.email, provider=MProviderType.SES, verification_link=verification_link)
+        await verify_email.send(recipient=user.email, provider=aws_ses, verification_link=verification_link)
         
         return UserSendVerifyEmailMailResponseSchema(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -307,11 +308,12 @@ async def send_otp(req_body: UserSendOtpRequestSchema, req: Request) -> UserSend
     try:
         otp: int = random.randint(1000, 9999)
         # aws_sns: SProvider = AWSSNS()
+        # twilio: SProvider = Twilio()
         # otp_sms: SMS = OTP()
-        # otp_sms.send(phone_number=req_body.phone_number, provider=aws_sns, otp=otp)
+        # otp_sms.send(phone_number=req_body.phone_number, provider=twilio, otp=otp)
         
         otp_key = f"otp_for_{req_body.phone_number}_is:"
-        await redis.set(otp_key, otp, ex=getenv('OTP_VALIDATION_TIME'))
+        await redis.set(otp_key, otp, ex=_Settings.OTP_VALIDATION_TIME)
         
         print(f"otp for {req_body.phone_number} is: {otp}")
         

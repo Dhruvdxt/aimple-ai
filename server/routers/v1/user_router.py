@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Request, Response
 from typing import Annotated
-from os import getenv
 from ...config.fastapi_config import limiter
 from ...controllers.v1.index import user_controller as user_ctrl
 from ...core.utils.auth import get_session_id
+from ...core.utils.function_tracer import trace_function1, trace_function2
+from ...core.utils.settings import Settings as _Settings
 from ...schemas.user_schemas.request import *
 from ...schemas.user_schemas.response import *
 from ...schemas.base_schemas import TokenData
@@ -17,9 +18,8 @@ session_id_dependency = Annotated[TokenData, Depends(get_session_id)]
 async def register(req_body: UserRegisterRequestSchema, request: Request):
     return user_ctrl.register(req_body, request)
 
-
 @router.post("/login", response_model=UserLoginResponseSchema)
-@limiter.limit(f"{getenv('RATE_LIMIT')}/minute")
+@limiter.limit(lambda: _Settings.LOGIN_RATE_LIMIT)
 async def login(req_body: UserLoginRequestSchema, request: Request, response: Response):
     return await user_ctrl.login(req_body, request, response)
 
@@ -30,6 +30,7 @@ async def logout(session_id: session_id_dependency, request: Request, response: 
 
 
 @router.get("/get_profile_data", response_model=UserGetProfileDataResponseSchema)
+@trace_function1
 async def get_profile_data(session_id: session_id_dependency, request: Request):
     return user_ctrl.get_profile_data(session_id, request)
 
@@ -45,8 +46,9 @@ async def get_activities(session_id: session_id_dependency):
 
 
 @router.get("/send_verify_email_mail", response_model=UserSendVerifyEmailMailResponseSchema)
+@trace_function2
 async def send_verify_email_mail(session_id: session_id_dependency):
-    return user_ctrl.send_verify_email_mail(session_id)
+    return await user_ctrl.send_verify_email_mail(session_id)
 
 
 @router.get("/send_reset_password_mail", response_model=UserSendResetPasswordMailResponseSchema)

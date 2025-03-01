@@ -5,10 +5,10 @@ from .index import Provider
 
 
 class AWSSES(Provider):
-    def send_mail(self, recipient: str, subject: dict, body: dict):
+    async def send_mail(self, recipient: str, subject: dict, body: dict):
         """Send email using AWS SES"""
         try:
-            response = ses_client.send_email(
+            response = await ses_client.send_email(
                 Source=f"Aimple AI <{getenv('AWS_SES_SENDER')}>",
                 Destination={"ToAddresses": [recipient]},
                 Message={

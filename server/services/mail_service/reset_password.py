@@ -14,8 +14,8 @@ class ResetPassword(Mail):
             template = file.read()
         return template.replace("{{reset_password_link}}", reset_password_link)
 
-    def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
+    async def send(self, recipient: str, provider: Provider, verification_link: Optional[str] = None, current_time: Optional[str] = None, account_settings_url: Optional[str] = None, reset_password_link: Optional[str] = None):
         subject = "Action Required: Reset Your Aimple AI Password"
         body = ResetPassword.__get_reset_password_mail_body(self, reset_password_link)
         
-        provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})
+        await provider.send_mail(recipient, {"Data": subject}, {"Html": {"Data": body}})

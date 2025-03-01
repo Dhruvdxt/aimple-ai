@@ -12,7 +12,7 @@ mysql_host = getenv('MYSQL_HOST')
 mysql_db_name = getenv('MYSQL_DB_NAME')
 DATABASE_URL = f"mysql+pymysql://{mysql_user}:{encoded_password}@{mysql_host}/{mysql_db_name}"
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL)
 meta = MetaData()
 db = engine.connect()
 
