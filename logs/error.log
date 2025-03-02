@@ -1,0 +1,25 @@
+2025-03-02 01:59:05,928 - INFO - Found credentials in environment variables.
+2025-03-02 01:59:06,422 - INFO - Found credentials in environment variables.
+2025-03-02 02:00:04,368 - INFO - Found credentials in environment variables.
+2025-03-02 02:00:04,525 - INFO - Found credentials in environment variables.
+2025-03-02 02:01:03,369 - INFO - Found credentials in environment variables.
+2025-03-02 02:01:03,654 - INFO - Found credentials in environment variables.
+2025-03-02 02:01:05,235 - INFO - Found credentials in environment variables.
+2025-03-02 02:01:05,392 - INFO - Found credentials in environment variables.
+2025-03-02 02:01:21,120 - INFO - Function `register` started execution.
+2025-03-02 02:12:50,866 - INFO - Found credentials in environment variables.
+2025-03-02 02:12:51,074 - INFO - Found credentials in environment variables.
+2025-03-02 15:08:11,068 - INFO - Found credentials in environment variables.
+2025-03-02 15:08:11,573 - INFO - Found credentials in environment variables.
+2025-03-02 15:08:29,483 - INFO - Function `login` started execution.
+2025-03-02 15:08:38,872 - INFO - Function `login` finished execution in 9.3885 seconds.
+2025-03-02 15:08:48,779 - INFO - Function `get_settings` started execution.
+2025-03-02 15:08:48,781 - INFO - Function `get_settings` finished execution in 0.0020 seconds.
+2025-03-02 15:09:27,488 - INFO - Function `update_settings` started execution.
+2025-03-02 15:09:27,522 - INFO - Function `update_settings` finished execution in 0.0335 seconds.
+2025-03-02 15:09:34,661 - INFO - Function `get_settings` started execution.
+2025-03-02 15:09:34,667 - INFO - Function `get_settings` finished execution in 0.0068 seconds.
+2025-03-02 15:13:12,180 - INFO - Found credentials in environment variables.
+2025-03-02 15:13:12,414 - INFO - Found credentials in environment variables.
+2025-03-02 15:13:21,997 - INFO - Function `get_users` started execution.
+2025-03-02 15:13:22,019 - INFO - Function `get_users` finished execution in 0.0217 seconds.

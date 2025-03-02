@@ -32,6 +32,7 @@ from ...services.sms_service.otp import OTP
 
 def register(req_body: UserRegisterRequestSchema, request: Request) -> UserRegisterResponseSchema:
     try:
+        raise ValueError("This is a test error!")
         if get_user_by_email(req_body.email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -115,7 +116,7 @@ def logout(session_id: str, request: Request, response: Response) -> UserLogoutR
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-def get_profile_data(session_id: str, request: Request) -> UserGetProfileDataResponseSchema:
+def get_profile_data(session_id: str) -> UserGetProfileDataResponseSchema:
     try:
         session = get_session_by_session_id(session_id)
         user = get_user_by_id(session.user_id)

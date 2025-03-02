@@ -7,6 +7,7 @@ load_dotenv()
 from .core.utils.settings import Settings
 Settings.get_from_db()
 from .config.fastapi_config import app, limiter
+# from .middlewares.exception_logging_middleware import ExceptionLoggingMiddleware
 from .routers.v1.index import router as v1
 from .routers.v2.index import router as v2
 
@@ -17,6 +18,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+# app.add_middleware(ExceptionLoggingMiddleware)
 
 
 app.state.limiter = limiter
